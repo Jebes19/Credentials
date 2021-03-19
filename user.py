@@ -1,11 +1,11 @@
-# Scans the info.txt for a match to the user entered value for 'search'. If there is only one match, the site, user and password are returned as a tuple.
-# Otherwise a warning is issued as a tuple with the warning string in position 0 and the error flag (None) in position 3
-# Change the add to look at the site and see if it is already in the list
+# Scans the info.txt for a match to the user entered value for 'search'. The search is returned as a gnerator so that the GUI can cycle through the matches.
+# script also includes file handling of info.txt
+
 from cryptography.fernet import Fernet
 import shutil, fkey
 
 #encypted Credentials File
-CredentialsFile = r"C:\Users\usstwilk\Documents\Useful docs\info\info.txt"
+CredentialsFile = fkey.infoLocation
 
 #Reading and writing the encrypted file
 def readFile(pin):
@@ -39,6 +39,7 @@ def changePin(pin1, pin2):
 
 # Read a new unecrypted Credentials file and encrypt it as the new file. 
 def newFile(file, pin):
+    global key
     key = bytes(pin + fkey.key()[len(pin):], 'utf-8')
     with open(file, 'r') as f:
         preList = [cred.split(',') for cred in f.read().split('\n')]
@@ -47,8 +48,7 @@ def newFile(file, pin):
         for site in credsList:
             if len(list(logIn(site[0]))) > 2:
                 return '{} duplicated in file'.format(site[0])
-            pass
-        writeFile(key)
+        writeFile()
     return '{} read and encoded'.format(CredentialsFile)
 
 # Print out the entire encrypted credentials file to review
@@ -62,49 +62,49 @@ def printCreds(pin=None):
 # Methods for dealing with a single set of credentials.  
 # Searches the credentials list and returns a single set of credentials which can be read or manipulated.
 
-def Credentials(function, site, newCreds = None, delete=None):
+
+def Credentials(function, site, newCreds=None, index=-1, delete=None):
     creds = logIn(site)
     if function == 'login':
         return creds
-    creds = list(creds)[0]
     if function == 'add':
         return addCred(newCreds)
     if function == 'update':
-        return updateCred(creds, newCreds)
+        return updateCred(index, newCreds)
     if function == 'delete':
-        return delCred(newCreds,delete)
+        return delCred(index,delete)
 
 def logIn(search):
-    for line in credsList:
+    for i,line in enumerate(credsList):
         if search.lower() in line[0].lower():       #reformats the line to ignore case when looking for a match
-            yield line+['Credentials Found']
-    yield ['','','','','End of list, no more matches']
+            yield line+['Credentials Found',i]
+    yield ['','','','','End of list, no more matches',-1]
 
-def updateCred(creds, newCreds):
+def updateCred(index, newCreds):
     if newCreds == None:
         newCreds = [input('Site: '), input('Username: '), input('Password: '), input('Comments: ')]
-    credsList.append(newCreds)
-    delCred(creds, 'DELETE')
+    credsList[index] = [newCreds[i] for i,line in enumerate(credsList[index])]
+    writeFile()
     return newCreds+['Credentials updated']
 
 def addCred(newCreds):
     if newCreds == None:
         newCreds = [input('Site: '), input('Username: '), input('Password: '), input('Comments: ')]
-    if newCreds[0]=='':
-        return ['','','','','No site Entered']
+    if newCreds in credsList:
+        return newCreds+['{} duplicated in file'.format(newCreds[0]),-1]
     credsList.append(newCreds)
     writeFile()
     print(newCreds[0]+' added')
-    return newCreds+['Credentials added']
+    return newCreds+['Credentials added',len(credsList)-1]
 
-def delCred(creds, delete):
-    if delete == None:      # Allows confirmation when using console commands
-        delete = input('Delete entry? '+creds[0]+'\nConfirm with DELETE : ')
+def delCred(index, delete):
     if delete == 'DELETE':
-        credsList.remove(creds[:4])
+        creds = credsList[index]
+        credsList.pop(index)
         writeFile()
         print(creds,' deleted')
-        return creds[:4]+['Credentials deleted']
+        return ['','','','','Credentials deleted',-1]
+
 
 if __name__ == "__main__":
     readFile(None)

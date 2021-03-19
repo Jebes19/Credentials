@@ -1,6 +1,4 @@
 # InterfaceGUI to interact with user.py
-
-
 from tkinter import *
 from tkinter import ttk, filedialog
 import user, webbrowser
@@ -30,12 +28,14 @@ class CredentialsGUI:
         self.pin2 = StringVar()
         self.allMatches = iter(())
         self.found = None
+        self.index = None       # Index of the current search
 
         # Import images
         self.copy_image = PhotoImage(file=r'images\\copy.png')
         self.settings_image = PhotoImage(file=r'images\\settings.png')
         self.open_image = PhotoImage(file=r'images\\open.png', height=30, width=30)
         self.password_image = PhotoImage(file=r'images\\eye2.png')
+        self.newFile_image = PhotoImage(file=r'images\\NewFile.png')
 
         # Page label
         ttk.Label(self.mainframe, text="PIN for Credentials file", ) \
@@ -47,9 +47,14 @@ class CredentialsGUI:
         self.pin_button.grid(column=1, row=1, sticky=E)
         self.pin_entry = ttk.Entry(self.mainframe, width=15, textvariable=self.pinEntry)
         self.pin_entry.grid(column=2, row=1, sticky=W)
-        self.pin_entry.bind("<Return>", self.submitPin)
+        self.pin_entry.bind("<Return>", lambda event: self.submitPin())
         self.pin_entry.bind("<Button-1>", lambda event: self.clearSearch(entry=self.pinEntry))
         self.pin_entry.focus()
+
+        # New File Button
+        ttk.Button(self.mainframe, text="New File", image=self.newFile_image, takefocus=0,
+                   command=self.loadNewFilepopup) \
+            .grid(column=0, row=0, rowspan=2, sticky=W)
 
         self.padding()
 
@@ -207,7 +212,7 @@ class CredentialsGUI:
     def updateStatus(self,text):
         self.status_label['text'] = text
 
-    def submitPin(self, *event):
+    def submitPin(self):
         try:
             user.readFile(self.pin_entry.get())
         except:
@@ -220,15 +225,17 @@ class CredentialsGUI:
         searchEntry = self.search.get()
         if searchEntry == '':  # If no search text entered, ignores this command after clearing the boxes.
             return
-        if self.found != searchEntry:
+        if self.found != searchEntry:       # If current search doesn't match previous search, reset allMatches to end of generator to force a new search
             self.allMatches = iter(())
         try:
-            creds = next(self.allMatches)
-        except StopIteration:
+            creds = next(self.allMatches)   # Try to advance the generator
+        except StopIteration:               # If no more matches
             self.allMatches = user.Credentials('login', searchEntry)  # Uses the pin and search box to search the Credentials File for the credentials.
             creds = next(self.allMatches)
-        self.updateEntries(creds)  # Successful search returns the 4 strings.
-        self.found = searchEntry
+        self.updateEntries(creds)  # Successful search returns the list of strings.
+        self.found = searchEntry   # Prep for next search if it is going to be identical and trigger the next entry
+        self.index = creds[5]
+
 
     def updateEntries(self, creds):  # Update the 4 boxes with new values which can be empty to clear the boxes or will be the return value from a search.
         self.site.set(creds[0])
@@ -237,10 +244,14 @@ class CredentialsGUI:
         self.comments.set(creds[3])
         self.updateStatus(creds[4])
 
-    def changeCreds(self, command, site, ):  # Use the existing entry values to add, edit or delete the creds to or from the list.
+
+    def changeCreds(self, function, site):  # Use the existing entry values to add, edit or delete the creds to or from the list.
+        site = site.get()
+        if site == '':
+            return None
         newCreds = [self.site.get(), self.user.get(), self.password.get(), self.comments.get()]
-        change = user.Credentials(command, site=site.get(), newCreds=newCreds, delete='DELETE')
-        self.updateStatus(change[4])
+        changed = user.Credentials(function, site, newCreds, self.index, 'DELETE')
+        self.updateEntries(changed)
 
     def passwordShow(self):
         self.password_entry['show'] = ''
