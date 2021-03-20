@@ -7,6 +7,7 @@ import shutil, fkey
 #encypted Credentials File
 CredentialsFile = fkey.infoLocation
 
+
 #Reading and writing the encrypted file
 def readFile(pin):
     if pin == None:
@@ -20,11 +21,19 @@ def readFile(pin):
     return "Pin Accepted"
 
 # Encrypt and overwrite the current CredsList after it has been modified.
-def writeFile():
+def writeFile(backup='',decoded=''):
     global key
-    eCreds = Fernet(key).encrypt(bytes('\n'.join([','.join(list) for list in credsList]), 'utf-8'))
-    shutil.copyfile(CredentialsFile, CredentialsFile.replace('txt', 'bak'))
-    with open(CredentialsFile, 'wb') as f:
+    if backup != 'N':
+        shutil.copyfile(CredentialsFile, CredentialsFile.replace('txt', 'bak'))
+    if decoded == 'decoded':
+        eCreds = '\n'.join([',\t\t'.join(list) for list in credsList])
+        fileType = 'w'
+        file = CredentialsFile.replace('.txt','decoded.txt')
+    else:
+        eCreds = Fernet(key).encrypt(bytes('\n'.join([','.join(list) for list in credsList]), 'utf-8'))
+        fileType = 'wb'
+        file = CredentialsFile
+    with open(file, fileType) as f:
         f.write(eCreds)
     return 'File Written'
 
@@ -48,10 +57,11 @@ def newFile(file, pin):
         for site in credsList:
             if len(list(logIn(site[0]))) > 2:
                 return '{} duplicated in file'.format(site[0])
-        writeFile()
+        writeFile(backup='N')
     return '{} read and encoded'.format(CredentialsFile)
 
 # Print out the entire encrypted credentials file to review
+# Currently not used by InfoGUI
 def printCreds(pin=None):
     readFile(pin)
     print('\n')
@@ -108,3 +118,4 @@ def delCred(index, delete):
 
 if __name__ == "__main__":
     readFile(None)
+    writeFile('','decoded')
