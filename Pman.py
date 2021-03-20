@@ -55,14 +55,14 @@ class CredentialsGUI:
         self.newFile_image = PhotoImage(file=newFile_img, height=30, width=30)
 
         # Page label
-        ttk.Label(self.mainframe, text="PIN for Credentials file", ) \
+        ttk.Label(self.mainframe, text="PIN for Credentials file") \
             .grid(column=1, row=0, columnspan=2, sticky=N)
 
         # Pin button and entry
         self.pin_button = ttk.Button(self.mainframe, text='PIN',
                                      command=self.submitPin)
         self.pin_button.grid(column=1, row=1, sticky=E)
-        self.pin_entry = ttk.Entry(self.mainframe, width=15, textvariable=self.pinEntry)
+        self.pin_entry = ttk.Entry(self.mainframe, width=15, textvariable=self.pinEntry, show='*')
         self.pin_entry.grid(column=2, row=1, sticky=W)
         self.pin_entry.bind("<Return>", lambda event: self.submitPin())
         self.pin_entry.bind("<Button-1>", lambda event: self.clearSearch(entry=self.pinEntry))
