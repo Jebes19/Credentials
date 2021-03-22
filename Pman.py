@@ -3,16 +3,6 @@ from tkinter import *
 from tkinter import ttk, filedialog
 import user, webbrowser, os, sys
 
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")+'\\images'
-
-    return os.path.join(base_path, relative_path)
-
 # Map the images to either the local directory or the temp directory created whe the exe runs.
 copy_img = user.fkey.path('copy.png')
 settings_img = user.fkey.path('settings.png')
