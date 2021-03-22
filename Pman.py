@@ -20,7 +20,7 @@ class CredentialsGUI:
         self.buildPage()
 
         # Initialize the main window
-        root.title("Credentials")
+        root.title("Pman")
         root.columnconfigure(0, weight=1, minsize=400)
         root.rowconfigure(0, weight=1)
 
@@ -44,8 +44,12 @@ class CredentialsGUI:
         self.password_image = PhotoImage(file=eye2_img, height=30, width=30)
         self.newFile_image = PhotoImage(file=newFile_img, height=30, width=30)
 
+        # Version label
+        ttk.Label(self.mainframe, text="Password Manager by Taylor Wilkin, Version 1.0.0")\
+            .grid(column=1, row=10, columnspan=3, sticky=N)
+
         # Pin Entry label and pin submission label.
-        ttk.Label(self.mainframe, text="PIN for Credentials file") \
+        ttk.Label(self.mainframe, text="PIN for Credentials file")\
             .grid(column=1, row=0, columnspan=2, sticky=N)
 
         self.submit_failed_label = ttk.Label(self.mainframe, text="")

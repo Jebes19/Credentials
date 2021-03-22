@@ -23,7 +23,7 @@ def key(pin):
 
 keyLocation = path('')
 fileLocation = os.getcwd()+r'\info.txt'
-decodedFile = os.getcwd()+'info_decoded.txt'
+decodedFile = os.getcwd()+r'\info_decoded.txt'
 
 if os.path.isfile(decodedFile):
     os.remove(decodedFile)
