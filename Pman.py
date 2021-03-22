@@ -13,18 +13,18 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-copy_img = resource_path('copy.png')
-settings_img = resource_path('settings.png')
-open_img = resource_path('open.png')
-eye1_img = resource_path('eye1.png')
-eye2_img = resource_path('eye2.png')
-newFile_img = resource_path('NewFile.png')
-eyeclosed_img = resource_path('eye_closed.png')
+# Map the images to either the local directory or the temp directory created whe the exe runs.
+copy_img = user.fkey.path('copy.png')
+settings_img = user.fkey.path('settings.png')
+open_img = user.fkey.path('open.png')
+eye1_img = user.fkey.path('eye1.png')
+eye2_img = user.fkey.path('eye2.png')
+newFile_img = user.fkey.path('NewFile.png')
+eyeclosed_img = user.fkey.path('eye_closed.png')
 
 class CredentialsGUI:
 
     # Methods to create the GUI, and recreate it when moving to different pages.
-
     def __init__(self, root):
         # build out standard window
         self.buildPage()
@@ -54,9 +54,12 @@ class CredentialsGUI:
         self.password_image = PhotoImage(file=eye2_img, height=30, width=30)
         self.newFile_image = PhotoImage(file=newFile_img, height=30, width=30)
 
-        # Page label
+        # Pin Entry label and pin submission label.
         ttk.Label(self.mainframe, text="PIN for Credentials file") \
             .grid(column=1, row=0, columnspan=2, sticky=N)
+
+        self.submit_failed_label = ttk.Label(self.mainframe, text="")
+        self.submit_failed_label.grid(column=2, row=1, columnspan=2, sticky=E)
 
         # Pin button and entry
         self.pin_button = ttk.Button(self.mainframe, text='PIN',
@@ -104,7 +107,7 @@ class CredentialsGUI:
                    command=lambda: self.toClip(self.site)) \
             .grid(column=3, row=2, sticky=W)
         ttk.Button(self.mainframe, image=self.open_image, takefocus=0,
-                   command=lambda: webbrowser.open(site_entry.get(), new=2),) \
+                   command=lambda: webbrowser.open(self.site.get(), new=2),) \
             .grid(column=0, row=2, sticky=E)
         site_entry = ttk.Entry(self.mainframe, textvariable=self.site)
         site_entry.grid(column=1, row=2, columnspan=2, sticky=(W, E))
@@ -172,7 +175,7 @@ class CredentialsGUI:
             .grid(column=1, row=1, columnspan=2, rowspan=2, sticky='ns')
         # Write all credentials
         ttk.Button(self.mainframe, text='Print plain text of all Credentials', width=50,
-                   command=lambda: user.writeFile('N','decoded')) \
+                   command=lambda: user.write_file(self.pinEntry.get(), 'N', 'decoded')) \
             .grid(column=1, row=3, columnspan=2, rowspan=2, sticky='ns')
         # Change pin
         ttk.Button(self.mainframe, text='Change Pin',
@@ -231,9 +234,9 @@ class CredentialsGUI:
 
     def submitPin(self):
         try:
-            user.readFile(self.pin_entry.get())
+            user.read_file(self.pin_entry.get())
         except:
-            self.pinEntry.set('Invalid PIN')
+            self.submit_failed_label['text']='Invalid PIN'
             return
         self.mainEntriesPage()
 
@@ -247,7 +250,7 @@ class CredentialsGUI:
         try:
             creds = next(self.allMatches)   # Try to advance the generator
         except StopIteration:               # If no more matches
-            self.allMatches = user.Credentials('login', searchEntry)  # Uses the pin and search box to search the Credentials File for the credentials.
+            self.allMatches = user.Credentials('login', searchEntry, self.pinEntry.get())  # Uses the pin and search box to search the Credentials File for the credentials.
             creds = next(self.allMatches)
         self.updateEntries(creds)  # Successful search returns the list of strings.
         self.found = searchEntry   # Prep for next search if it is going to be identical and trigger the next entry
@@ -267,7 +270,7 @@ class CredentialsGUI:
         if site == '':
             return None
         newCreds = [self.site.get(), self.user.get(), self.password.get(), self.comments.get()]
-        changed = user.Credentials(function, site, newCreds, self.index, 'DELETE')
+        changed = user.Credentials(function, site, self.pinEntry.get(), newCreds, self.index, 'DELETE')
         self.updateEntries(changed)
 
     def passwordShow(self):
@@ -287,13 +290,10 @@ class CredentialsGUI:
 
 
     def loadNewFile(self):
-        status = user.newFile(filedialog.askopenfile(initialdir="/").name, self.entry.get())
+        user.newFile(filedialog.askopenfile(initialdir="/").name, self.entry.get())
         self.pinEntry.set(self.entry.get())        # Reset the global pin to use the new pin for files
         self.top.destroy()
-        try:
-            self.updateStatus(status)
-        except:
-            pass
+
 
     def changePin(self):
         pin1 = self.pin1.get()

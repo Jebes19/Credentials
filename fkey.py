@@ -2,7 +2,7 @@
 
 import os, sys
 
-def resource_path(relative_path):
+def path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
@@ -12,16 +12,18 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-def key():
+def key(pin):
+    chars = len(pin)
     for file in os.listdir(keyLocation):
         baseFile, ext = os.path.splitext(file)
         if len(baseFile) == 44:
-            return baseFile
+            start = sum(bytes(pin,'utf-8'))%(44-chars)
+            return bytes(baseFile[:start]+pin+baseFile[start+chars:], 'utf-8')
 
 
-keyLocation = resource_path('')
-infoLocation = os.getcwd()+r'\info.txt'
-try:
-    os.remove(infoLocation.replace('.txt','decoded.txt'))
-except:
-    print('No decoded.txt file')
+keyLocation = path('')
+fileLocation = os.getcwd()+r'\info.txt'
+decodedFile = os.getcwd()+'info_decoded.txt'
+
+if os.path.isfile(decodedFile):
+    os.remove(decodedFile)
