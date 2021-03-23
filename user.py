@@ -86,10 +86,11 @@ def Credentials(function, site, pin, newCreds=None, index=-1, delete=None):
 
 def logIn(search):
     for i, line in enumerate(credsList):
+        if search=='*all*':
+            yield line + ['Search again for next entry',i]
         if search.lower() in line[0].lower():  # reformats the line to ignore case when looking for a match
             yield line + ['Credentials Found', i]
-
-
+    yield ['','','','','End of list, no more matches',-1]
 
 def updateCred(index, newCreds, pin):
     if newCreds == None:

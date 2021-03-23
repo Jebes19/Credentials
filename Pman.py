@@ -37,6 +37,7 @@ class CredentialsGUI:
         self.last = None
         self.index = None       # Index of the current search
 
+
         # Import images
         self.copy_image = PhotoImage(file=copy_img, height=30, width=30)
         self.settings_image = PhotoImage(file=settings_img, height=30, width=30)
@@ -52,8 +53,8 @@ class CredentialsGUI:
         ttk.Label(self.mainframe, text="PIN for Credentials file")\
             .grid(column=1, row=0, columnspan=2, sticky=N)
 
-        self.submit_failed_label = ttk.Label(self.mainframe, text="")
-        self.submit_failed_label.grid(column=2, row=1, columnspan=2, sticky=E)
+        self.status_label = ttk.Label(self.mainframe, text='')
+        self.status_label.grid(column=2, row=1, columnspan=2, sticky=E)
 
         # Pin button and entry
         self.pin_button = ttk.Button(self.mainframe, text='PIN',
@@ -230,9 +231,9 @@ class CredentialsGUI:
 
     def submitPin(self):
         try:
-            user.read_file(self.pin_entry.get())
+            user.read_file(self.pinEntry.get())
         except:
-            self.submit_failed_label['text']='Invalid PIN'
+            self.status_label['text']='Invalid PIN'
             return
         self.mainEntriesPage()
 
@@ -294,6 +295,7 @@ class CredentialsGUI:
         self.pinEntry.set(entry)        # Reset the global pin to use the new pin for files
         self.top.destroy()
         self.submitPin()
+        self.search.set('*all*')    # Start the search box with *all* after adding a new file
 
 
     def changePin(self):
