@@ -210,9 +210,11 @@ class CredentialsGUI:
     def loadNewFilepopup(self):
         top = self.top = Toplevel(root)
         Label(top, text="PIN to encode File").pack(padx=10, pady=5)
-        self.entry = Entry(top)
-        self.entry.pack(padx=10, pady=5)
-        Button(top, text='Ok', command=self.loadNewFile).pack(padx=10, pady=5)
+        entry = Entry(top, justify='center')
+        entry.pack(padx=10, pady=5)
+        Button(top, text='Ok', command=lambda: self.loadNewFile(entry.get())).pack(padx=10, pady=5)
+        entry.bind("<Return>", lambda event: self.loadNewFile(entry.get()))
+        entry.focus()
 
     def padding(self):
         for child in self.mainframe.winfo_children():
@@ -287,10 +289,11 @@ class CredentialsGUI:
         self.updateStatus(button)
 
 
-    def loadNewFile(self):
-        user.newFile(filedialog.askopenfile(initialdir="/").name, self.entry.get())
-        self.pinEntry.set(self.entry.get())        # Reset the global pin to use the new pin for files
+    def loadNewFile(self,entry):
+        user.newFile(filedialog.askopenfile(initialdir="/").name, entry)
+        self.pinEntry.set(entry)        # Reset the global pin to use the new pin for files
         self.top.destroy()
+        self.submitPin()
 
 
     def changePin(self):
