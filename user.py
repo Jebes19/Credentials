@@ -25,7 +25,7 @@ def write_file(pin, backup='', decoded=''):
     if backup != 'N':
         shutil.copyfile(CredentialsFile, CredentialsFile.replace('txt', 'bak'))
     if decoded == 'decoded':
-        eCreds = '\n'.join([',\t\t'.join(list) for list in credsList])
+        eCreds = '\n'.join([',\t\t'.join(entry) for entry in credsList])
         fileType = 'w'
         file = CredentialsFile.replace('.txt', '_decoded.txt')
     else:
@@ -48,11 +48,9 @@ def changePin(pin1, pin2):
 # Read a new unencrypted Credentials file and encrypt it as the new file.
 def newFile(file, pin):
     with open(file, 'r') as f:
-        preList = [cred.replace('\t', '').split(',') for cred in f.read().split(
-            '\n')]  # Reads the file of credentials, removing tabs before splitting each line into a csv.
+        preList = [cred.replace('\t', '').split(',')[:4] for cred in f.read().split('\n')]  # Reads the file of credentials, removing tabs before splitting each line into a csv.
         global credsList
-        credsList = [group + [''] * (4 - len(group)) for group in
-                     preList]  # Expand any entries with less than 4 items to include blank lines
+        credsList = [group + [''] * (4 - len(group)) for group in preList]  # Expand any entries with less than 4 items to include blank lines
         for site in credsList:
             if len(list(logIn(site[0]))) > 2:
                 return '{} duplicated in file'.format(site[0])
@@ -90,7 +88,7 @@ def logIn(search):
     for i, line in enumerate(credsList):
         if search.lower() in line[0].lower():  # reformats the line to ignore case when looking for a match
             yield line + ['Credentials Found', i]
-    yield ['', '', '', '', 'End of list, no more matches', -1]
+
 
 
 def updateCred(index, newCreds, pin):

@@ -34,7 +34,7 @@ class CredentialsGUI:
         self.pin1 = StringVar()
         self.pin2 = StringVar()
         self.allMatches = iter(())
-        self.found = None
+        self.last = None
         self.index = None       # Index of the current search
 
         # Import images
@@ -239,17 +239,21 @@ class CredentialsGUI:
         searchEntry = self.search.get()
         if searchEntry == '':  # If no search text entered, ignores this command after clearing the boxes.
             return
-        if self.found != searchEntry:       # If current search doesn't match previous search, reset allMatches to end of generator to force a new search
+        if self.last != searchEntry:       # If current search doesn't match previous search, reset allMatches to end of generator to force a new search
             self.allMatches = iter(())
         try:
             creds = next(self.allMatches)   # Try to advance the generator
         except StopIteration:               # If no more matches
             self.allMatches = user.Credentials('login', searchEntry, self.pinEntry.get())  # Uses the pin and search box to search the Credentials File for the credentials.
-            creds = next(self.allMatches)
+            try:
+                creds = next(self.allMatches)
+            except StopIteration:
+                creds = ['','','','','No matches found',-1]
         self.updateEntries(creds)  # Successful search returns the list of strings.
-        self.found = searchEntry   # Prep for next search if it is going to be identical and trigger the next entry
-        self.index = creds[5]
+        self.last = searchEntry   # Prep for next search if it is going to be identical and trigger the next entry
+        self.index = creds[5]       # Set the i value for the currently displayed search results
 
+    # Set a flag that the Stopiteration was hit. If it is the first time, rerun the search, if it happens again, that it because there is no matches.
 
     def updateEntries(self, creds):  # Update the 4 boxes with new values which can be empty to clear the boxes or will be the return value from a search.
         self.site.set(creds[0])
