@@ -24,8 +24,8 @@ def read_file(pin):
 def write_file(pin, backup='', decoded=''):
     if backup != 'N':
         shutil.copyfile(CredentialsFile, CredentialsFile.replace('txt', 'bak'))
-    if decoded == 'decoded':
-        eCreds = '\n'.join([',\t\t'.join(entry) for entry in credsList])
+    if decoded == 'decoded':        # Write a decoded file and drop the final end of list item
+        eCreds = '\n'.join([',\t\t'.join(entry) for entry in credsList[:-1]])
         fileType = 'w'
         file = CredentialsFile.replace('.txt', '_decoded.txt')
     else:
@@ -54,6 +54,7 @@ def newFile(file, pin):
         for site in credsList:
             if len(list(logIn(site[0]))) > 2:
                 return '{} duplicated in file'.format(site[0])
+        credsList.append(['','','','End of list, no more matches'])
         write_file(pin, backup='N')
     return '{} read and encoded'.format(CredentialsFile)
 
@@ -90,7 +91,6 @@ def logIn(search):
             yield line + ['Search again for next entry',i]
         if search.lower() in line[0].lower():  # reformats the line to ignore case when looking for a match
             yield line + ['Credentials Found', i]
-    yield ['','','','','End of list, no more matches',-1]
 
 def updateCred(index, newCreds, pin):
     if newCreds == None:

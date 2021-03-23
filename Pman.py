@@ -1,28 +1,24 @@
 # InterfaceGUI to interact with user.py
 from tkinter import *
 from tkinter import ttk, filedialog
-import user, webbrowser, os, sys
 
-# Map the images to either the local directory or the temp directory created whe the exe runs.
-copy_img = user.fkey.path('copy.png')
-settings_img = user.fkey.path('settings.png')
-open_img = user.fkey.path('open.png')
-eye1_img = user.fkey.path('eye1.png')
-eye2_img = user.fkey.path('eye2.png')
-newFile_img = user.fkey.path('NewFile.png')
-eyeclosed_img = user.fkey.path('eye_closed.png')
+import cryptography
 
+import user, webbrowser
+
+
+# noinspection PyAttributeOutsideInit
 class CredentialsGUI:
 
     # Methods to create the GUI, and recreate it when moving to different pages.
-    def __init__(self, root):
+    def __init__(self, main):
         # build out standard window
         self.buildPage()
 
         # Initialize the main window
-        root.title("Pman")
-        root.columnconfigure(0, weight=1, minsize=400)
-        root.rowconfigure(0, weight=1)
+        main.title("Pman")
+        main.columnconfigure(0, weight=1, minsize=400)
+        main.rowconfigure(0, weight=1)
 
         # Initialize all the variables
         self.pinEntry = StringVar()
@@ -37,16 +33,15 @@ class CredentialsGUI:
         self.last = None
         self.index = None       # Index of the current search
 
-
         # Import images
-        self.copy_image = PhotoImage(file=copy_img, height=30, width=30)
-        self.settings_image = PhotoImage(file=settings_img, height=30, width=30)
-        self.open_image = PhotoImage(file=open_img, height=30, width=30)
-        self.password_image = PhotoImage(file=eye2_img, height=30, width=30)
-        self.newFile_image = PhotoImage(file=newFile_img, height=30, width=30)
+        self.copy_image = PhotoImage(file=user.fkey.path('copy.png'), height=30, width=30)
+        self.settings_image = PhotoImage(file=user.fkey.path('settings.png'), height=30, width=30)
+        self.open_image = PhotoImage(file=user.fkey.path('open.png'), height=30, width=30)
+        self.password_image = PhotoImage(file=user.fkey.path('eye2.png'), height=30, width=30)
+        self.newFile_image = PhotoImage(file=user.fkey.path('NewFile.png'), height=30, width=30)
 
         # Version label
-        ttk.Label(self.mainframe, text="Password Manager by Taylor Wilkin, Version 1.0.0")\
+        ttk.Label(self.mainframe, text="Password Manager by Taylor Wilkin, Version 1.1.1")\
             .grid(column=1, row=10, columnspan=3, sticky=N)
 
         # Pin Entry label and pin submission label.
@@ -73,7 +68,7 @@ class CredentialsGUI:
 
         self.padding()
 
-    def mainEntriesPage(self):
+    def main_entries_page(self):
         self.mainframe.destroy()
         self.buildPage()
 
@@ -135,7 +130,7 @@ class CredentialsGUI:
                                    command=None)
         delete_button.grid(column=1, row=9, sticky=W)
         delete_button.bind('<Double-Button-1>', lambda event: self.changeCreds('delete', self.site))
-        delete_button.bind('<Button-1>',lambda event: self.updateStatus('Double click "Delete" to confirm'))
+        delete_button.bind('<Button-1>', lambda event: self.updateStatus('Double click "Delete" to confirm'))
         ttk.Button(self.mainframe, text="Update",
                    command=lambda: self.changeCreds('update', self.site)) \
             .grid(column=2, row=9, sticky=W)
@@ -147,14 +142,13 @@ class CredentialsGUI:
 
         self.search_entry.focus()
 
-
     def optionsPage(self):
         self.mainframe.destroy()
         self.buildPage()
 
         # Options Button, now returns to the Main Entries window.
         ttk.Button(self.mainframe, text="Options", image=self.settings_image,
-                   command=self.mainEntriesPage) \
+                   command=self.main_entries_page) \
             .grid(column=0, row=0, sticky=W)
 
         # Status labels
@@ -223,19 +217,20 @@ class CredentialsGUI:
 
     # Methods to interact with the various entry boxes and buttons.
 
+    # noinspection PyUnusedLocal
     def clearSearch(self, *event, entry=None):  # This is called by the left click event on the entry to clear all text from the entry.
         entry.set('')
 
-    def updateStatus(self,text):
+    def updateStatus(self, text):
         self.status_label['text'] = text
 
     def submitPin(self):
         try:
             user.read_file(self.pinEntry.get())
-        except:
+        except cryptography.fernet.InvalidToken:
             self.status_label['text']='Invalid PIN'
             return
-        self.mainEntriesPage()
+        self.main_entries_page()
 
     def getLogin(self, *event):  # Use the input from the search box and look for login information.
         self.updateEntries(['', '', '', '',self.status_label['text']])  # Clears the entries whenever a search is run. Doesn't clear the search bar.
@@ -248,7 +243,7 @@ class CredentialsGUI:
             creds = next(self.allMatches)   # Try to advance the generator
         except StopIteration:               # If no more matches
             self.allMatches = user.Credentials('login', searchEntry, self.pinEntry.get())  # Uses the pin and search box to search the Credentials File for the credentials.
-            try:
+            try:                            # Will reset the search to the top of the list unless there are no matches
                 creds = next(self.allMatches)
             except StopIteration:
                 creds = ['','','','','No matches found',-1]
@@ -276,12 +271,12 @@ class CredentialsGUI:
 
     def passwordShow(self):
         self.password_entry['show'] = ''
-        self.password_image['file'] = eyeclosed_img
+        self.password_image['file'] = user.fkey.path('eye_closed.png')
         self.show_password['command'] = self.passwordHide
 
     def passwordHide(self):
         self.password_entry['show'] = '*'
-        self.password_image['file'] = eye1_img
+        self.password_image['file'] = user.fkey.path('eye1.png')
         self.show_password['command'] = self.passwordShow
 
     def toClip(self, button):
