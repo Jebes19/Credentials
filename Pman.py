@@ -21,7 +21,7 @@ class CredentialsGUI:
         main.rowconfigure(0, weight=1)
 
         # Initialize all the variables
-        self.pinEntry = StringVar()
+        self.currentPin = StringVar()
         self.site = StringVar(name='Site copied to clipboard')
         self.user = StringVar(name='User copied to clipboard')
         self.password = StringVar(name='Password copied to clipboard')
@@ -41,7 +41,7 @@ class CredentialsGUI:
         self.newFile_image = PhotoImage(file=user.fkey.path('NewFile.png'), height=30, width=30)
 
         # Version label
-        ttk.Label(self.mainframe, text="Password Manager by Taylor Wilkin, Version 1.1.1")\
+        ttk.Label(self.mainframe, text="Password Manager by Taylor Wilkin, Version 1.1.2")\
             .grid(column=1, row=10, columnspan=3, sticky=N)
 
         # Pin Entry label and pin submission label.
@@ -55,10 +55,10 @@ class CredentialsGUI:
         self.pin_button = ttk.Button(self.mainframe, text='PIN',
                                      command=self.submitPin)
         self.pin_button.grid(column=1, row=1, sticky=E)
-        self.pin_entry = ttk.Entry(self.mainframe, width=15, textvariable=self.pinEntry, show='*')
+        self.pin_entry = ttk.Entry(self.mainframe, width=15, textvariable=self.currentPin, show='*')
         self.pin_entry.grid(column=2, row=1, sticky=W)
         self.pin_entry.bind("<Return>", lambda event: self.submitPin())
-        self.pin_entry.bind("<Button-1>", lambda event: self.clearSearch(entry=self.pinEntry))
+        self.pin_entry.bind("<Button-1>", lambda event: self.clearSearch(entry=self.currentPin))
         self.pin_entry.focus()
 
         # New File Button
@@ -158,13 +158,16 @@ class CredentialsGUI:
         self.status_label.grid(column=1, row=0, columnspan=2, sticky=E)
 
         # Functional buttons
-        # Load file button
+        # Load file buttons
         ttk.Button(self.mainframe, text='Load New File', width=50,
                    command=self.loadNewFilepopup) \
-            .grid(column=1, row=1, columnspan=2, rowspan=2, sticky='ns')
+            .grid(column=1, row=2, columnspan=2, rowspan=1, sticky='ns')
+        ttk.Button(self.mainframe, text='Load Backup File', width=50,
+                   command=self.load_backup) \
+            .grid(column=1, row=1, columnspan=2, rowspan=1, sticky='ns')
         # Write all credentials
         ttk.Button(self.mainframe, text='Print plain text of all Credentials', width=50,
-                   command=lambda: user.write_file(self.pinEntry.get(), 'N', 'decoded')) \
+                   command=lambda: user.write_file(self.currentPin.get(), 'N', 'decoded')) \
             .grid(column=1, row=3, columnspan=2, rowspan=2, sticky='ns')
         # Change pin
         ttk.Button(self.mainframe, text='Change Pin',
@@ -226,7 +229,7 @@ class CredentialsGUI:
 
     def submitPin(self):
         try:
-            user.read_file(self.pinEntry.get())
+            user.read_file(self.currentPin.get())
         except cryptography.fernet.InvalidToken:
             self.status_label['text']='Invalid PIN'
             return
@@ -242,7 +245,7 @@ class CredentialsGUI:
         try:
             creds = next(self.allMatches)   # Try to advance the generator
         except StopIteration:               # If no more matches
-            self.allMatches = user.Credentials('login', searchEntry, self.pinEntry.get())  # Uses the pin and search box to search the Credentials File for the credentials.
+            self.allMatches = user.Credentials('login', searchEntry, self.currentPin.get())  # Uses the pin and search box to search the Credentials File for the credentials.
             try:                            # Will reset the search to the top of the list unless there are no matches
                 creds = next(self.allMatches)
             except StopIteration:
@@ -266,7 +269,7 @@ class CredentialsGUI:
         if site == '':
             return None
         newCreds = [self.site.get(), self.user.get(), self.password.get(), self.comments.get()]
-        changed = user.Credentials(function, site, self.pinEntry.get(), newCreds, self.index, 'DELETE')
+        changed = user.Credentials(function, site, self.currentPin.get(), newCreds, self.index, 'DELETE')
         self.updateEntries(changed)
 
     def passwordShow(self):
@@ -287,11 +290,16 @@ class CredentialsGUI:
 
     def loadNewFile(self,entry):
         user.newFile(filedialog.askopenfile(initialdir="/").name, entry)
-        self.pinEntry.set(entry)        # Reset the global pin to use the new pin for files
+        self.currentPin.set(entry)        # Reset the global pin to use the new pin for files
         self.top.destroy()
         self.submitPin()
         self.search.set('*all*')    # Start the search box with *all* after adding a new file
 
+    def load_backup(self):
+        user.read_file(self.currentPin.get(),user.fkey.backupFile)
+        self.submitPin()
+        self.updateEntries(['', '', '', '','Backup File loaded',-1])
+        self.search.set('*all*')
 
     def changePin(self):
         pin1 = self.pin1.get()
@@ -301,7 +309,7 @@ class CredentialsGUI:
         except:
             self.updateStatus('Invalid PIN')
             return
-        self.pinEntry.set(pin1)
+        self.currentPin.set(pin1)
         self.pin1.set('')
         self.pin2.set('')
         self.updateStatus('Pin Changed')

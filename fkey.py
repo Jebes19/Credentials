@@ -1,6 +1,6 @@
 # Private script to store the location of the credentials file as well as the location of the key file.
 
-import os, sys
+import os, sys, shutil
 
 def path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -9,7 +9,6 @@ def path(relative_path):
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")+'\\images'
-
     return os.path.join(base_path, relative_path)
 
 def key(pin):
@@ -22,8 +21,12 @@ def key(pin):
 
 
 keyLocation = path('')
-fileLocation = os.getcwd()+r'\info.txt'
+file = os.getcwd() + r'\info.txt'
+backupFile = os.getcwd()+r'\info.bak'
 decodedFile = os.getcwd()+r'\info_decoded.txt'
 
 if os.path.isfile(decodedFile):
     os.remove(decodedFile)
+
+if not os.path.isfile(backupFile):
+    shutil.copyfile(file, backupFile)

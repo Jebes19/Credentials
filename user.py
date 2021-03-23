@@ -5,33 +5,29 @@
 from cryptography.fernet import Fernet
 import shutil, fkey
 
-# Encypted Credentials File
-CredentialsFile = fkey.fileLocation
-
-
 # Reading and writing the encrypted file
-def read_file(pin):
+def read_file(pin, file=fkey.file):
     if pin is None:
         pin = input('Pin: ')
-    with open(CredentialsFile, 'rb') as f:
+    with open(file, 'rb') as f:
         allCreds = Fernet(fkey.key(pin)).decrypt(f.read()).decode().split('\n')
-        global credsList
-        credsList = [cred.split(',') for cred in allCreds]
+    global credsList
+    credsList = [cred.split(',') for cred in allCreds]
     return "Pin Accepted"
 
 
 # Encrypt and overwrite the current CredsList after it has been modified.
 def write_file(pin, backup='', decoded=''):
     if backup != 'N':
-        shutil.copyfile(CredentialsFile, CredentialsFile.replace('txt', 'bak'))
+        shutil.copyfile(fkey.file, fkey.file.replace('txt', 'bak'))
     if decoded == 'decoded':        # Write a decoded file and drop the final end of list item
         eCreds = '\n'.join([',\t\t'.join(entry) for entry in credsList[:-1]])
         fileType = 'w'
-        file = CredentialsFile.replace('.txt', '_decoded.txt')
+        file = fkey.backupFile
     else:
         eCreds = Fernet(fkey.key(pin)).encrypt(bytes('\n'.join([','.join(entry) for entry in credsList]), 'utf-8'))
         fileType = 'wb'
-        file = CredentialsFile
+        file = fkey.file
     with open(file, fileType) as f:
         f.write(eCreds)
     return 'File Written'
@@ -56,7 +52,7 @@ def newFile(file, pin):
                 return '{} duplicated in file'.format(site[0])
         credsList.append(['','','','End of list, no more matches'])
         write_file(pin, backup='N')
-    return '{} read and encoded'.format(CredentialsFile)
+    return '{} read and encoded'.format(fkey.file)
 
 
 # Print out the entire encrypted credentials file to review
