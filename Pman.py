@@ -17,7 +17,7 @@ class CredentialsGUI:
         self.build_page()
 
         # Initialize the main window
-        main.title("Pman")
+        main.title("Password Manager")
         main.columnconfigure(0, weight=1, minsize=400)
         main.rowconfigure(0, weight=1)
 
@@ -59,7 +59,7 @@ class CredentialsGUI:
         self.pin_entry = ttk.Entry(self.mainframe, width=15, textvariable=self.currentPin, show='*')
         self.pin_entry.grid(column=2, row=1, sticky=W)
         self.pin_entry.bind("<Return>", lambda event: self.submit_pin())
-        self.pin_entry.bind("<Button-1>", lambda event: self.clear_search(entry=self.currentPin))
+        self.pin_entry.bind("<Button-1>", lambda event: self.currentPin.set(''))
         self.pin_entry.focus()
 
         # New File Button
@@ -77,7 +77,7 @@ class CredentialsGUI:
         self.search_entry = ttk.Entry(self.mainframe, width=30, textvariable=self.search)
         self.search_entry.grid(column=2, row=0, sticky=W)
         self.search_entry.bind("<Return>", self.get_login)
-        self.search_entry.bind("<Button-1>", lambda event: self.clear_search(entry=self.search))
+        self.search_entry.bind("<Button-1>", lambda event: self.search.set(''))
         # Search Button
         ttk.Button(self.mainframe, text='Search',
                    command=self.get_login) \
@@ -130,13 +130,13 @@ class CredentialsGUI:
         delete_button = ttk.Button(self.mainframe, text="Delete",
                                    command=None)
         delete_button.grid(column=1, row=9, sticky=W)
-        delete_button.bind('<Double-Button-1>', lambda event: self.change_creds('delete', self.site))
+        delete_button.bind('<Double-Button-1>', lambda event: self.change_entry('delete', self.site))
         delete_button.bind('<Button-1>', lambda event: self.update_status('Double click "Delete" to confirm'))
         ttk.Button(self.mainframe, text="Update",
-                   command=lambda: self.change_creds('update', self.site)) \
+                   command=lambda: self.change_entry('update', self.site)) \
             .grid(column=2, row=9, sticky=W)
         ttk.Button(self.mainframe, text="Add",
-                   command=lambda: self.change_creds('add', self.site)) \
+                   command=lambda: self.change_entry('add', self.site)) \
             .grid(column=2, row=9, sticky=E)
 
         self.padding()
@@ -180,13 +180,13 @@ class CredentialsGUI:
             .grid(column=0, row=7, sticky=W)
         pin1_entry = ttk.Entry(self.mainframe, textvariable=self.pin1)
         pin1_entry.grid(column=0, row=7, columnspan=2, sticky=E)
-        pin1_entry.bind("<Button-1>", lambda event: self.clear_search(entry=self.pin1))
+        pin1_entry.bind("<Button-1>", lambda event: self.pin1.set(''))
 
         ttk.Label(self.mainframe, text="Pins must match") \
             .grid(column=2, row=8, sticky=W)
         pin2_entry = ttk.Entry(self.mainframe, textvariable=self.pin2)
         pin2_entry.grid(column=2, row=7, columnspan=2, sticky=W)
-        pin2_entry.bind("<Button-1>", lambda event: self.clear_search(entry=self.pin2))
+        pin2_entry.bind("<Button-1>", lambda event: self.pin2.set(''))
 
         self.mainframe.rowconfigure(1, weight=1, minsize=50)
         self.mainframe.rowconfigure(2, weight=1, minsize=50)
@@ -221,14 +221,13 @@ class CredentialsGUI:
 
     # Methods to interact with the various entry boxes and buttons.
 
-    # noinspection PyUnusedLocal
-    def clear_search(self, *event, entry=None):  # This is called by the left click event on the entry to clear all text from the entry.
-        entry.set('')
 
     def update_status(self, text):
+        # temporary method until it can be refactored
         self.status_label['text'] = text
 
     def submit_pin(self):
+        # Primarily checks the pin against the file but also reloads the credsList used by all the User methods
         try:
             user.read_file(self.currentPin.get())
         except cryptography.fernet.InvalidToken:
@@ -239,17 +238,18 @@ class CredentialsGUI:
             return
         self.main_entries_page()
 
-    def get_login(self, *event):  # Use the input from the search box and look for login information.
-        self.update_entries(['', '', '', '', self.status_label['text']])  # Clears the entries whenever a search is run. Doesn't clear the search bar.
+    def get_login(self, *event):
+        # Takes Search input and checks for a matched login. Returns a generator to retrieve all matches
+        self.update_entries(['', '', '', '', self.status_label['text']])    # Clears entries but not Status box
         searchEntry = self.search.get()
-        if searchEntry == '':  # If no search text entered, ignores this command after clearing the boxes.
+        if searchEntry == '':
             return
-        if self.last != searchEntry:       # If current search doesn't match previous search, reset allMatches to end of generator to force a new search
-            self.allMatches = iter(())
+        if self.last != searchEntry:        # New searches won't match the last search
+            self.allMatches = iter(())      # Empty generator object
         try:
-            credentials = next(self.allMatches)   # Try to advance the generator
-        except StopIteration:               # If no more matches
-            self.allMatches = user.Credentials('login', searchEntry, self.currentPin.get())  # Uses the pin and search box to search the Credentials File for the credentials.
+            credentials = next(self.allMatches)
+        except StopIteration:               # If no more matches or upon first search
+            self.allMatches = user.Credentials('login', searchEntry, self.currentPin.get())
             try:                            # Will reset the search to the top of the list unless there are no matches
                 credentials = next(self.allMatches)
             except StopIteration:
@@ -258,20 +258,22 @@ class CredentialsGUI:
         self.last = searchEntry   # Prep for next search if it is going to be identical and trigger the next entry
         self.index = credentials[5]       # Set the i value for the currently displayed search results
 
-    def update_entries(self, credentials):  # Update the 4 boxes with new values which can be empty to clear the boxes or will be the return value from a search.
+    def update_entries(self, credentials):
+        # Update entries with new values which can be empty to clear the boxes or will be the return value from a search.
         self.site.set(credentials[0])
         self.user.set(credentials[1])
         self.password.set(credentials[2])
         self.comments.set(credentials[3])
         self.update_status(credentials[4])
 
-    def change_creds(self, function, site):  # Use the existing entry values to add, edit or delete the creds to or from the list.
+    def change_entry(self, function, site):
+        # Use the existing entry values to add, edit or delete the credentials to or from the list.
         site = site.get()
         if site == '':
             return None
         newCreds = [self.site.get(), self.user.get(), self.password.get(), self.comments.get()]
         changed = user.Credentials(function, site, self.currentPin.get(), newCreds, self.index, 'DELETE')
-        self.update_entries(changed)
+        self.update_entries(changed)    # Updates entries from the return from previous call
 
     def password_show(self):
         self.password_entry['show'] = ''
@@ -284,15 +286,15 @@ class CredentialsGUI:
         self.show_password['command'] = self.password_show
 
     def to_clip(self, button):
-        root.clipboard_clear()  # clear clipboard contents
-        root.clipboard_append(button.get())  # append new value to clipboard
+        root.clipboard_clear()
+        root.clipboard_append(button.get())
         self.update_status(button)
 
     def load_new_file(self, entry):
         user.newFile(filedialog.askopenfile(initialdir="/").name, entry)
         self.currentPin.set(entry)        # Reset the global pin to use the new pin for files
         self.top.destroy()
-        self.submit_pin()
+        self.submit_pin()           # Reloads the file from the new pin
         self.search.set('*all*')    # Start the search box with *all* after adding a new file
 
     def load_backup(self):
