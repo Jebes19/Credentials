@@ -29,4 +29,7 @@ if os.path.isfile(decodedFile):
     os.remove(decodedFile)
 
 if not os.path.isfile(backupFile):
-    shutil.copyfile(file, backupFile)
+    try:
+        shutil.copyfile(file, backupFile)
+    except FileNotFoundError:
+        pass

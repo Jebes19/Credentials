@@ -19,11 +19,11 @@ def read_file(pin, file=fkey.file):
 # Encrypt and overwrite the current CredsList after it has been modified.
 def write_file(pin, backup='', decoded=''):
     if backup != 'N':
-        shutil.copyfile(fkey.file, fkey.file.replace('txt', 'bak'))
+        shutil.copyfile(fkey.file, fkey.backupFile)
     if decoded == 'decoded':        # Write a decoded file and drop the final end of list item
         eCreds = '\n'.join([',\t\t'.join(entry) for entry in credsList[:-1]])
         fileType = 'w'
-        file = fkey.backupFile
+        file = fkey.decodedFile
     else:
         eCreds = Fernet(fkey.key(pin)).encrypt(bytes('\n'.join([','.join(entry) for entry in credsList]), 'utf-8'))
         fileType = 'wb'
