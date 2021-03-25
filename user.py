@@ -50,7 +50,6 @@ def newFile(file, pin):
         for site in credsList:
             if len(list(logIn(site[0]))) > 2:
                 return '{} duplicated in file'.format(site[0])
-        credsList.append(['','','','End of list, no more matches'])
         write_file(pin, backup='N')
     return '{} read and encoded'.format(fkey.file)
 
@@ -85,7 +84,7 @@ def logIn(search):
     for i, line in enumerate(credsList):
         if search=='*all*':
             yield line + ['Search again for next entry',i]
-        if search.lower() in line[0].lower():  # reformats the line to ignore case when looking for a match
+        if search.lower() in line[0].lower():       # ignore case
             yield line + ['Credentials Found', i]
 
 def updateCred(index, newCreds, pin):

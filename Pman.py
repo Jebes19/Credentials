@@ -5,7 +5,7 @@ from tkinter import ttk, filedialog
 import cryptography
 
 import user, webbrowser
-version = '1.1.3'
+version = '1.2.0'
 
 
 # noinspection PyAttributeOutsideInit,PyUnusedLocal
@@ -221,7 +221,6 @@ class CredentialsGUI:
 
     # Methods to interact with the various entry boxes and buttons.
 
-
     def update_status(self, text):
         # temporary method until it can be refactored
         self.status_label['text'] = text
@@ -244,22 +243,42 @@ class CredentialsGUI:
         searchEntry = self.search.get()
         if searchEntry == '':
             return
+        if self.last != searchEntry:        # New searches won't match the last search nor will end of list
+            self.allMatches = user.Credentials('login', searchEntry, self.currentPin.get())
+        try:
+            next_entry = next(self.allMatches)
+        except StopIteration:               # End of list of no matches
+            if self.last != searchEntry:
+                next_entry = ['', '', '', '', 'No matches found', -1]
+            else:
+                next_entry = ['', '', '', '', 'End of matches', -1]
+            searchEntry = ''                # Forces next search to start over
+        self.last = searchEntry             # If try succeeds, self.last will match search entry
+        self.update_entries(next_entry)     # Successful search returns the list of strings           # Prep for next search in case it is identical and trigger the next entry
+        self.index = next_entry[5]         # Set the i value for the currently displayed search results
+
+    def xxxget_login(self, *event):
+        # Takes Search input and checks for a matched login. Returns a generator to retrieve all matches
+        self.update_entries(['', '', '', '', self.status_label['text']])    # Clears entries but not Status box
+        searchEntry = self.search.get()
+        if searchEntry == '':
+            return
         if self.last != searchEntry:        # New searches won't match the last search
             self.allMatches = iter(())      # Empty generator object
         try:
-            credentials = next(self.allMatches)
+            next_entry = next(self.allMatches)
         except StopIteration:               # If no more matches or upon first search
             self.allMatches = user.Credentials('login', searchEntry, self.currentPin.get())
             try:                            # Will reset the search to the top of the list unless there are no matches
-                credentials = next(self.allMatches)
+                next_entry = next(self.allMatches)
             except StopIteration:
-                credentials = ['', '', '', '', 'No matches found', -1]
-        self.update_entries(credentials)  # Successful search returns the list of strings.
-        self.last = searchEntry   # Prep for next search if it is going to be identical and trigger the next entry
-        self.index = credentials[5]       # Set the i value for the currently displayed search results
+                next_entry = ['', '', '', '', 'No matches found', -1]
+        self.update_entries(next_entry)    # Successful search returns the list of strings
+        self.last = searchEntry             # Prep for next search in case it is identical and trigger the next entry
+        self.index = next_entry[5]         # Set the i value for the currently displayed search results
 
     def update_entries(self, credentials):
-        # Update entries with new values which can be empty to clear the boxes or will be the return value from a search.
+        # Update entries with new values which can be empty to clear the boxes or will be the return from a search.
         self.site.set(credentials[0])
         self.user.set(credentials[1])
         self.password.set(credentials[2])
@@ -271,8 +290,8 @@ class CredentialsGUI:
         site = site.get()
         if site == '':
             return None
-        newCreds = [self.site.get(), self.user.get(), self.password.get(), self.comments.get()]
-        changed = user.Credentials(function, site, self.currentPin.get(), newCreds, self.index, 'DELETE')
+        new = [self.site.get(), self.user.get(), self.password.get(), self.comments.get()]
+        changed = user.Credentials(function, site, self.currentPin.get(), new, self.index, 'DELETE')
         self.update_entries(changed)    # Updates entries from the return from previous call
 
     def password_show(self):
