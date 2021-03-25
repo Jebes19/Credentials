@@ -5,7 +5,7 @@ from tkinter import ttk, filedialog
 import cryptography
 
 import user, webbrowser
-version = '1.2.0'
+version = '1.2.1'
 
 
 # noinspection PyAttributeOutsideInit,PyUnusedLocal
@@ -13,8 +13,6 @@ class CredentialsGUI:
 
     # Methods to create the GUI, and recreate it when moving to different pages.
     def __init__(self, main):
-        # build out standard window
-        self.build_page()
 
         # Initialize the main window
         main.title("Password Manager")
@@ -30,9 +28,11 @@ class CredentialsGUI:
         self.search = StringVar()
         self.pin1 = StringVar()
         self.pin2 = StringVar()
+        self.status = StringVar('')
         self.allMatches = iter(())
         self.last = None
         self.index = None       # Index of the current search
+
 
         # Import images
         self.copy_image = PhotoImage(file=user.fkey.path('copy.png'), height=30, width=30)
@@ -41,6 +41,10 @@ class CredentialsGUI:
         self.password_image = PhotoImage(file=user.fkey.path('eye2.png'), height=30, width=30)
         self.newFile_image = PhotoImage(file=user.fkey.path('NewFile.png'), height=30, width=30)
 
+        # Import standard window configuration
+        self.build_page()
+        self.status_label.grid(column=2, row=1, columnspan=2, sticky=E)
+
         # Version label
         ttk.Label(self.mainframe, text="Password Manager by Taylor Wilkin, Version "+version)\
             .grid(column=1, row=10, columnspan=3, sticky=N)
@@ -48,9 +52,6 @@ class CredentialsGUI:
         # Pin Entry label and pin submission label.
         ttk.Label(self.mainframe, text="PIN for Credentials file")\
             .grid(column=1, row=0, columnspan=2, sticky=N)
-
-        self.status_label = ttk.Label(self.mainframe, text='')
-        self.status_label.grid(column=2, row=1, columnspan=2, sticky=E)
 
         # Pin button and entry
         self.pin_button = ttk.Button(self.mainframe, text='PIN',
@@ -76,11 +77,11 @@ class CredentialsGUI:
         # Search Entry
         self.search_entry = ttk.Entry(self.mainframe, width=30, textvariable=self.search)
         self.search_entry.grid(column=2, row=0, sticky=W)
-        self.search_entry.bind("<Return>", self.get_login)
+        self.search_entry.bind("<Return>", lambda event: self.get_login(self.search.get()))
         self.search_entry.bind("<Button-1>", lambda event: self.search.set(''))
         # Search Button
         ttk.Button(self.mainframe, text='Search',
-                   command=self.get_login) \
+                   command=lambda: self.get_login(self.search.get())) \
             .grid(column=1, row=0, sticky=E)
         # Options Button
         ttk.Button(self.mainframe, text="Options", image=self.settings_image, takefocus=0,
@@ -89,7 +90,6 @@ class CredentialsGUI:
         # Status labels
         ttk.Label(self.mainframe, text="Status") \
            .grid(column=1, row=1, sticky=E)
-        self.status_label = ttk.Label(self.mainframe, text='Ready to Search')
         self.status_label.grid(column=2, row=1, sticky=W)
         # Site label, button, entry and site open button
         ttk.Label(self.mainframe, text="Site") \
@@ -131,7 +131,7 @@ class CredentialsGUI:
                                    command=None)
         delete_button.grid(column=1, row=9, sticky=W)
         delete_button.bind('<Double-Button-1>', lambda event: self.change_entry('delete', self.site))
-        delete_button.bind('<Button-1>', lambda event: self.update_status('Double click "Delete" to confirm'))
+        delete_button.bind('<Button-1>', lambda event: self.status.set('Double click "Delete" to confirm'))
         ttk.Button(self.mainframe, text="Update",
                    command=lambda: self.change_entry('update', self.site)) \
             .grid(column=2, row=9, sticky=W)
@@ -155,7 +155,6 @@ class CredentialsGUI:
         # Status labels
         ttk.Label(self.mainframe, text="Status") \
            .grid(column=1, row=0, sticky=W)
-        self.status_label = ttk.Label(self.mainframe, text='Ready to Search', wraplength=300)
         self.status_label.grid(column=1, row=0, columnspan=2, sticky=E)
 
         # Functional buttons
@@ -198,6 +197,7 @@ class CredentialsGUI:
         self.padding()
 
     def build_page(self):
+        # Builds the elements common to all the main pages
         self.mainframe = ttk.Frame(root, padding="3 3 12 12")
         self.mainframe.pack()
         self.mainframe.columnconfigure(0, weight=1, minsize=20)
@@ -205,6 +205,7 @@ class CredentialsGUI:
         self.mainframe.columnconfigure(2, weight=1, minsize=180)
         self.mainframe.columnconfigure(3, weight=1, minsize=20)
         self.mainframe.rowconfigure(10, weight=1, minsize=20)
+        self.status_label = ttk.Label(self.mainframe, textvariable=self.status)
 
     def popup_load_new_file(self):
         top = self.top = Toplevel(root)
@@ -221,26 +222,22 @@ class CredentialsGUI:
 
     # Methods to interact with the various entry boxes and buttons.
 
-    def update_status(self, text):
-        # temporary method until it can be refactored
-        self.status_label['text'] = text
-
     def submit_pin(self):
         # Primarily checks the pin against the file but also reloads the credsList used by all the User methods
         try:
             user.read_file(self.currentPin.get())
         except cryptography.fernet.InvalidToken:
-            self.status_label['text'] = 'Invalid PIN'
+            self.status.set('Invalid PIN')
             return
         except FileNotFoundError:
-            self.status_label['text'] = 'No File found'
+            self.status.set('No File found')
             return
+        self.status.set('Ready to Search')
         self.main_entries_page()
 
-    def get_login(self, *event):
+    def get_login(self, searchEntry):
         # Takes Search input and checks for a matched login. Returns a generator to retrieve all matches
         self.update_entries(['', '', '', '', self.status_label['text']])    # Clears entries but not Status box
-        searchEntry = self.search.get()
         if searchEntry == '':
             return
         if self.last != searchEntry:        # New searches won't match the last search nor will end of list
@@ -257,33 +254,13 @@ class CredentialsGUI:
         self.update_entries(next_entry)     # Successful search returns the list of strings           # Prep for next search in case it is identical and trigger the next entry
         self.index = next_entry[5]         # Set the i value for the currently displayed search results
 
-    def xxxget_login(self, *event):
-        # Takes Search input and checks for a matched login. Returns a generator to retrieve all matches
-        self.update_entries(['', '', '', '', self.status_label['text']])    # Clears entries but not Status box
-        searchEntry = self.search.get()
-        if searchEntry == '':
-            return
-        if self.last != searchEntry:        # New searches won't match the last search
-            self.allMatches = iter(())      # Empty generator object
-        try:
-            next_entry = next(self.allMatches)
-        except StopIteration:               # If no more matches or upon first search
-            self.allMatches = user.Credentials('login', searchEntry, self.currentPin.get())
-            try:                            # Will reset the search to the top of the list unless there are no matches
-                next_entry = next(self.allMatches)
-            except StopIteration:
-                next_entry = ['', '', '', '', 'No matches found', -1]
-        self.update_entries(next_entry)    # Successful search returns the list of strings
-        self.last = searchEntry             # Prep for next search in case it is identical and trigger the next entry
-        self.index = next_entry[5]         # Set the i value for the currently displayed search results
-
     def update_entries(self, credentials):
         # Update entries with new values which can be empty to clear the boxes or will be the return from a search.
         self.site.set(credentials[0])
         self.user.set(credentials[1])
         self.password.set(credentials[2])
         self.comments.set(credentials[3])
-        self.update_status(credentials[4])
+        self.status.set(credentials[4])
 
     def change_entry(self, function, site):
         # Use the existing entry values to add, edit or delete the credentials to or from the list.
@@ -307,7 +284,7 @@ class CredentialsGUI:
     def to_clip(self, button):
         root.clipboard_clear()
         root.clipboard_append(button.get())
-        self.update_status(button)
+        self.status.set(button)
 
     def load_new_file(self, entry):
         user.newFile(filedialog.askopenfile(initialdir="/").name, entry)
@@ -326,14 +303,13 @@ class CredentialsGUI:
         pin1 = self.pin1.get()
         pin2 = self.pin2.get()
         try:
-            user.changePin(pin1, pin2)
+            self.status.set(user.changePin(pin1, pin2))     # Changes pin if matched and valid pins
         except cryptography.fernet.InvalidToken:
-            self.update_status('Invalid PIN')
+            self.status.set('Invalid PIN')
             return
         self.currentPin.set(pin1)
         self.pin1.set('')
         self.pin2.set('')
-        self.update_status('Pin Changed')
 
 
 root = Tk()
