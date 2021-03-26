@@ -5,8 +5,9 @@
 from cryptography.fernet import Fernet
 import shutil, fkey
 
+
 # Reading and writing the encrypted file
-def read_file(pin, file=fkey.file):
+def read_file(pin, file=fkey.baseFile):
     if pin is None:
         pin = input('Pin: ')
     with open(file, 'rb') as f:
@@ -19,7 +20,7 @@ def read_file(pin, file=fkey.file):
 # Encrypt and overwrite the current CredsList after it has been modified.
 def write_file(pin, backup='', decoded=''):
     if backup != 'N':
-        shutil.copyfile(fkey.file, fkey.backupFile)
+        shutil.copyfile(fkey.baseFile, fkey.backupFile)
     if decoded == 'decoded':        # Write a decoded file and drop the final end of list item
         eCreds = '\n'.join([',\t\t'.join(entry) for entry in credsList[:-1]])
         fileType = 'w'
@@ -27,36 +28,40 @@ def write_file(pin, backup='', decoded=''):
     else:
         eCreds = Fernet(fkey.key(pin)).encrypt(bytes('\n'.join([','.join(entry) for entry in credsList]), 'utf-8'))
         fileType = 'wb'
-        file = fkey.file
+        file = fkey.baseFile
     with open(file, fileType) as f:
         f.write(eCreds)
     return 'File Written'
 
 
 # Change the encryption key of the file.
-def changePin(pin1, pin2):
+def change_pin(pin1, pin2):
     if pin1 != pin2:
         return "Pins don't match"
     write_file(pin1)
     return 'Pin changed'
 
 
-# Read a new unencrypted Credentials file and encrypt it as the new file.
-def newFile(file, pin):
+def new_file(file, pin):
+    # Read a new unencrypted Credentials csv type file and encrypt it as the working file.
     with open(file, 'r') as f:
-        preList = [cred.replace('\t', '').split(',')[:4] for cred in f.read().split('\n')]  # Reads the file of credentials, removing tabs before splitting each line into a csv.
+        preList = [cred.replace('\t', '')             # Remove tabs from lines
+                       .split(',')[:4]                # Split on commas and limit size to 4 items
+                   for cred in f.readlines()]  ##### Check if this can become readlines
+
         global credsList
-        credsList = [group + [''] * (4 - len(group)) for group in preList]  # Expand any entries with less than 4 items to include blank lines
-        for site in credsList:
-            if len(list(logIn(site[0]))) > 2:
+        credsList = [group + [''] * (4 - len(group)) for group in preList]
+            # Expand any entries with less than 4 items to include blank lines
+        for site in credsList:      # Checks if the exact same entry is already in the file
+            if len(list(log_in(site[0]))) > 2:
                 return '{} duplicated in file'.format(site[0])
         write_file(pin, backup='N')
-    return '{} read and encoded'.format(fkey.file)
+    return '{} read and encoded'.format(fkey.baseFile)
 
 
 # Print out the entire encrypted credentials file to review
 # Currently not used by InfoGUI
-def printCreds(pin=None):
+def print_creds(pin=None):
     read_file(pin)
     print('\n')
     for line in credsList:
@@ -68,34 +73,32 @@ def printCreds(pin=None):
 # Searches the credentials list and returns a single set of credentials which can be read or manipulated.
 
 
-def Credentials(function, site, pin, newCreds=None, index=-1, delete=None):
-    creds = logIn(site)
+def credentials(function, site, pin, new=None, index=-1, delete=None):
+    creds = log_in(site)
     if function == 'login':
         return creds
     if function == 'add':
-        return addCred(newCreds, pin)
+        return add_entry(new, pin)
     if function == 'update':
-        return updateCred(index, newCreds, pin)
+        return update_entry(index, new, pin)
     if function == 'delete':
-        return delCred(index, delete, pin)
+        return del_entry(index, delete, pin)
 
-
-def logIn(search):
+def log_in(search):
     for i, line in enumerate(credsList):
         if search=='*all*':
             yield line + ['Search again for next entry',i]
         if search.lower() in line[0].lower():       # ignore case
             yield line + ['Credentials Found', i]
 
-def updateCred(index, newCreds, pin):
-    if newCreds == None:
-        newCreds = [input('Site: '), input('Username: '), input('Password: '), input('Comments: ')]
-    credsList[index] = [newCreds[i] for i, line in enumerate(credsList[index])]
+def update_entry(index, newCreds, pin):
+    # Takes the entries as newCreds and location as index. Overwrites all the values at that index
+    credsList[index] = [newCreds[i] for i, line in enumerate(credsList[index])] # Line ignored and overwritten
     write_file(pin)
     return newCreds + ['Credentials updated']
 
 
-def addCred(newCreds, pin):
+def add_entry(newCreds, pin):
     if newCreds == None:
         newCreds = [input('Site: '), input('Username: '), input('Password: '), input('Comments: ')]
     if newCreds in credsList:
@@ -106,7 +109,7 @@ def addCred(newCreds, pin):
     return newCreds + ['Credentials added', len(credsList) - 1]
 
 
-def delCred(index, delete, pin):
+def del_entry(index, delete, pin):
     if delete == 'DELETE':
         creds = credsList[index]
         credsList.pop(index)

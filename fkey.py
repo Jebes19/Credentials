@@ -1,6 +1,9 @@
 # Private script to store the location of the credentials file as well as the location of the key file.
 
-import os, sys, shutil
+import os
+import sys
+import shutil
+
 
 def path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -11,17 +14,18 @@ def path(relative_path):
         base_path = os.path.abspath(".")+'\\images'
     return os.path.join(base_path, relative_path)
 
+
 def key(pin):
     chars = len(pin)
     for file in os.listdir(keyLocation):
-        baseFile, ext = os.path.splitext(file)
-        if len(baseFile) == 44:
-            start = sum(bytes(pin,'utf-8'))%(44-chars)
-            return bytes(baseFile[:start]+pin+baseFile[start+chars:], 'utf-8')
+        fileName, ext = os.path.splitext(file)
+        if len(fileName) == 44:
+            start = sum(bytes(pin, 'utf-8')) % (44-chars)
+            return bytes(fileName[:start]+pin+fileName[start+chars:], 'utf-8')
 
 
 keyLocation = path('')
-file = os.getcwd() + r'\info.txt'
+baseFile = os.getcwd() + r'\info.txt'
 backupFile = os.getcwd()+r'\info.bak'
 decodedFile = os.getcwd()+r'\info_decoded.txt'
 
@@ -30,6 +34,6 @@ if os.path.isfile(decodedFile):
 
 if not os.path.isfile(backupFile):
     try:
-        shutil.copyfile(file, backupFile)
+        shutil.copyfile(baseFile, backupFile)
     except FileNotFoundError:
         pass
