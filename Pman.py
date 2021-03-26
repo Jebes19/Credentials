@@ -1,15 +1,16 @@
 # InterfaceGUI to interact with user.py
+
 from tkinter import *
 from tkinter import ttk, filedialog
 import cryptography
 import user
 import webbrowser
 
-VERSION = '1.2.2'
+VERSION = '1.2.3'
 
 
 # noinspection PyAttributeOutsideInit,PyUnresolvedReferences
-class CredentialsGUI:
+class GUI:
 
     # Methods to create the GUI, and recreate it when moving to different pages.
     def __init__(self, main):
@@ -312,5 +313,5 @@ class CredentialsGUI:
 
 
 root = Tk()
-CredentialsGUI(root)
+GUI(root)
 root.mainloop()

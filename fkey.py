@@ -1,4 +1,5 @@
 # Private script to store the location of the credentials file as well as the location of the key file.
+# Generates keys from the pin
 
 import os
 import sys
