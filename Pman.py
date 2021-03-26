@@ -6,7 +6,7 @@ import cryptography
 import user
 import webbrowser
 
-VERSION = '1.2.3'
+VERSION = '1.2.4'
 
 
 # noinspection PyAttributeOutsideInit,PyUnresolvedReferences

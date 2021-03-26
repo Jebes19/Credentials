@@ -1,6 +1,5 @@
-# Scans the info.txt for a match to the user entered value for 'search'.
+# Encrypts, decrypts and handles a file containing logins for a match to the user entered value for 'search'.
 # The search is returned as a generator so that the GUI can cycle through the matches.
-# script also includes file handling of info.txt
 
 from cryptography.fernet import Fernet
 import shutil, fkey
