@@ -8,7 +8,7 @@ import user
 import webbrowser
 
 
-VERSION = '1.3.2'
+VERSION = '1.3.3'
 
 
 # noinspection PyAttributeOutsideInit,PyUnresolvedReferences
@@ -183,8 +183,6 @@ class GUI:
         # Change pin labels and entries
         ttk.Label(self.mainframe, text="New Pin") \
             .grid(column=0, row=7, sticky=W)
-        ttk.Label(self.mainframe, text="Pins must match") \
-            .grid(column=2, row=8, sticky=W)
         ttk.Entry(self.mainframe, textvariable=self.pin1StrVar) \
             .grid(column=0, row=7, columnspan=2, sticky=E)
         ttk.Entry(self.mainframe, textvariable=self.pin2StrVar) \

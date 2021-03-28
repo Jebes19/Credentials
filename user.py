@@ -18,6 +18,8 @@ def read_file(pin, file=fkey.baseFile):
 
 # Encrypt and overwrite the current CredsList after it has been modified.
 def write_file(pin, backup=False, decoded=''):
+    if len(pin) not in range(1,44):
+        return 'Pin of invalid length'
     if backup is True:
         shutil.copyfile(fkey.baseFile, fkey.backupFile)
     if decoded == 'decoded':        # Write a decoded file and drop the final end of list item
@@ -37,6 +39,8 @@ def write_file(pin, backup=False, decoded=''):
 def change_pin(pin1, pin2):
     if pin1 != pin2:
         return "Pins don't match"
+    if len(pin1) not in range(1,44):
+        return 'Pin of invalid length'
     write_file(pin1, backup=True)
     return 'Pin changed'
 
