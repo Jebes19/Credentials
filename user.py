@@ -21,7 +21,7 @@ def write_file(pin, backup=False, decoded=''):
     if len(pin) not in range(1,44):
         return 'Pin of invalid length'
     if backup is True:
-        fkey.copyfile(fkey.baseFile, fkey.backupFile)
+        fkey.backup()
     if decoded == 'decoded':        # Write a decoded file and drop the final end of list item
         eCreds = '\n'.join([',\t\t'.join(entry) for entry in credsList[:-1]])
         fileType = 'w'
@@ -50,7 +50,7 @@ def new_file(file, pin):
     with open(file, 'r') as f:
         preList = [cred.replace('\t', '')             # Remove tabs from lines
                        .split(',')[:4]                # Split on commas and limit size to 4 items max
-                   for cred in f.readlines()]
+                   for cred in f.read().split('\n')]    # Read lines and removes newlines
         global credsList
         credsList = [group + [''] * (4 - len(group)) for group in preList]  # Expand size 4 items min
         for site in credsList:      # Checks for duplicates

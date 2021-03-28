@@ -33,8 +33,9 @@ decodedFile = os.getcwd()+r'\info_decoded.txt'
 if os.path.isfile(decodedFile):
     os.remove(decodedFile)
 
-if not os.path.isfile(backupFile):
-    try:
-        copyfile(baseFile, backupFile)
-    except FileNotFoundError:
-        pass
+def backup():
+    if not os.path.isfile(backupFile):
+        try:
+            copyfile(baseFile, backupFile)
+        except FileNotFoundError:
+            pass

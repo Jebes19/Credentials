@@ -8,7 +8,7 @@ import user
 from webbrowser import open
 
 
-VERSION = '1.3.4'
+VERSION = '1.3.5'
 
 
 # noinspection PyAttributeOutsideInit,PyUnresolvedReferences
