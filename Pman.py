@@ -5,10 +5,10 @@ from tkinter import ttk, filedialog
 from threading import Timer
 from cryptography.fernet import InvalidToken
 import user
-import webbrowser
+from webbrowser import open
 
 
-VERSION = '1.3.3'
+VERSION = '1.3.4'
 
 
 # noinspection PyAttributeOutsideInit,PyUnresolvedReferences
@@ -100,7 +100,7 @@ class GUI:
                    command=lambda: self.to_clip(self.siteStrVar)) \
             .grid(column=3, row=2, sticky=W)
         ttk.Button(self.mainframe, image=self.open_image, takefocus=0,
-                   command=lambda: webbrowser.open(self.siteStrVar.get(), new=2), ) \
+                   command=lambda: open(self.siteStrVar.get(), new=2), ) \
             .grid(column=0, row=2, sticky=E)
         ttk.Entry(self.mainframe, textvariable=self.siteStrVar) \
             .grid(column=1, row=2, columnspan=2, sticky=(W, E))

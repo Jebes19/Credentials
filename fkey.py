@@ -3,7 +3,7 @@
 
 import os
 import sys
-import shutil
+from shutil import copyfile
 
 
 def path(relative_path):
@@ -35,6 +35,6 @@ if os.path.isfile(decodedFile):
 
 if not os.path.isfile(backupFile):
     try:
-        shutil.copyfile(baseFile, backupFile)
+        copyfile(baseFile, backupFile)
     except FileNotFoundError:
         pass

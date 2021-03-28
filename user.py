@@ -2,7 +2,7 @@
 # The search is returned as a generator so that the GUI can cycle through the matches.
 
 from cryptography.fernet import Fernet
-import shutil, fkey
+import fkey
 
 
 # Reading and writing the encrypted file
@@ -21,7 +21,7 @@ def write_file(pin, backup=False, decoded=''):
     if len(pin) not in range(1,44):
         return 'Pin of invalid length'
     if backup is True:
-        shutil.copyfile(fkey.baseFile, fkey.backupFile)
+        fkey.copyfile(fkey.baseFile, fkey.backupFile)
     if decoded == 'decoded':        # Write a decoded file and drop the final end of list item
         eCreds = '\n'.join([',\t\t'.join(entry) for entry in credsList[:-1]])
         fileType = 'w'
