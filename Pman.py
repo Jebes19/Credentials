@@ -2,11 +2,13 @@
 
 from tkinter import *
 from tkinter import ttk, filedialog
+from threading import Timer
 import cryptography
 import user
 import webbrowser
 
-VERSION = '1.2.4'
+
+VERSION = '1.3.0'
 
 
 # noinspection PyAttributeOutsideInit,PyUnresolvedReferences
@@ -21,18 +23,18 @@ class GUI:
         main.rowconfigure(0, weight=1)
 
         # Initialize all the variables
-        self.currentPin = StringVar()
-        self.site = StringVar(name='Site copied to clipboard')
-        self.user = StringVar(name='User copied to clipboard')
-        self.password = StringVar(name='Password copied to clipboard')
-        self.comments = StringVar()
-        self.search = StringVar()
-        self.pin1 = StringVar()
-        self.pin2 = StringVar()
-        self.status = StringVar('')
-        self.allMatches = iter(())
-        self.last = None
-        self.index = None
+        self.currentPinStrVar = StringVar()
+        self.siteStrVar = StringVar(name='Site copied to clipboard')
+        self.userStrVar = StringVar(name='User copied to clipboard')
+        self.passwordStrVar = StringVar(name='Password copied to clipboard')
+        self.commentsStrVar = StringVar()
+        self.searchStrVar = StringVar()
+        self.pin1StrVar = StringVar()
+        self.pin2StrVar = StringVar()
+        self.statusStrVar = StringVar('')
+        self.allMatchesIter = iter(())
+        self.lastVar = None
+        self.indexVar = None
 
         # Import images
         self.copy_image = PhotoImage(file=user.fkey.path('copy.png'), height=30, width=30)
@@ -56,10 +58,10 @@ class GUI:
         # Pin button and entry
         self.pin_button = ttk.Button(self.mainframe, text='PIN', command=self.submit_pin)
         self.pin_button.grid(column=1, row=1, sticky=E)
-        self.pin_entry = ttk.Entry(self.mainframe, width=15, textvariable=self.currentPin, show='*')
+        self.pin_entry = ttk.Entry(self.mainframe, width=15, textvariable=self.currentPinStrVar, show='*')
         self.pin_entry.grid(column=2, row=1, sticky=W)
         self.pin_entry.bind("<Return>", lambda event: self.submit_pin())
-        self.pin_entry.bind("<Button-1>", lambda event: self.currentPin.set(''))
+        self.pin_entry.bind("<Button-1>", lambda event: self.currentPinStrVar.set(''))
         self.pin_entry.focus()
 
         # New File Button
@@ -74,14 +76,14 @@ class GUI:
         self.build_page()
 
         # Search Entry
-        search_entry = ttk.Entry(self.mainframe, width=30, textvariable=self.search)
+        search_entry = ttk.Entry(self.mainframe, width=30, textvariable=self.searchStrVar)
         search_entry.grid(column=2, row=0, sticky=W)
-        search_entry.bind("<Return>", lambda event: self.get_login(self.search.get()))
-        search_entry.bind("<Button-1>", lambda event: self.search.set(''))
+        search_entry.bind("<Return>", lambda event: self.get_login(self.searchStrVar.get()))
+        search_entry.bind("<Button-1>", lambda event: self.searchStrVar.set(''))
         search_entry.focus()
         # Search Button
         ttk.Button(self.mainframe, text='Search',
-                   command=lambda: self.get_login(self.search.get())) \
+                   command=lambda: self.get_login(self.searchStrVar.get())) \
             .grid(column=1, row=0, sticky=E)
         # Options Button
         ttk.Button(self.mainframe, text="Options", image=self.settings_image, takefocus=0,
@@ -95,28 +97,28 @@ class GUI:
         ttk.Label(self.mainframe, text="Site") \
             .grid(column=1, row=1, columnspan=2, sticky=(W, S))
         ttk.Button(self.mainframe, image=self.copy_image, takefocus=0,
-                   command=lambda: self.to_clip(self.site)) \
+                   command=lambda: self.to_clip(self.siteStrVar)) \
             .grid(column=3, row=2, sticky=W)
         ttk.Button(self.mainframe, image=self.open_image, takefocus=0,
-                   command=lambda: webbrowser.open(self.site.get(), new=2),) \
+                   command=lambda: webbrowser.open(self.siteStrVar.get(), new=2), ) \
             .grid(column=0, row=2, sticky=E)
-        ttk.Entry(self.mainframe, textvariable=self.site) \
+        ttk.Entry(self.mainframe, textvariable=self.siteStrVar) \
             .grid(column=1, row=2, columnspan=2, sticky=(W, E))
         # Username label, button, and entry
         ttk.Label(self.mainframe, text="Username") \
             .grid(column=1, row=3, sticky=(W, S))
-        ttk.Entry(self.mainframe, textvariable=self.user) \
+        ttk.Entry(self.mainframe, textvariable=self.userStrVar) \
             .grid(column=1, row=4, columnspan=2, sticky=(W, E))
         ttk.Button(self.mainframe, image=self.copy_image, takefocus=0,
-                   command=lambda: self.to_clip(self.user)) \
+                   command=lambda: self.to_clip(self.userStrVar)) \
             .grid(column=3, row=4, sticky=W)
         # Password label, button, entry, and show password button
         ttk.Label(self.mainframe, text="Password") \
             .grid(column=1, row=5, sticky=(W, S))
         ttk.Button(self.mainframe, image=self.copy_image, takefocus=0,
-                   command=lambda: self.to_clip(self.password)) \
+                   command=lambda: self.to_clip(self.passwordStrVar)) \
             .grid(column=3, row=6, sticky=W)
-        self.password_entry = ttk.Entry(self.mainframe, textvariable=self.password, show="*")
+        self.password_entry = ttk.Entry(self.mainframe, textvariable=self.passwordStrVar, show="*")
         self.password_entry.grid(column=1, row=6, columnspan=2, sticky=(W, E))
         self.show_password = ttk.Button(self.mainframe, takefocus=0, image=self.password_image,
                                         command=self.password_show)
@@ -124,18 +126,18 @@ class GUI:
         # Comments label and entry
         ttk.Label(self.mainframe, text="Comments") \
             .grid(column=1, columnspan=2, row=7, sticky=(W, S))
-        ttk.Entry(self.mainframe, textvariable=self.comments) \
+        ttk.Entry(self.mainframe, textvariable=self.commentsStrVar) \
             .grid(column=1, row=8, columnspan=2, sticky=(W, E))
         # Add, Update and Delete buttons
         delete_button = ttk.Button(self.mainframe, text="Delete",
-                                   command=lambda: self.status.set('Double click "Delete" to confirm'))
+                                   command=lambda: self.statusStrVar.set('Double click "Delete" to confirm'))
         delete_button.grid(column=1, row=9, sticky=W)
-        delete_button.bind('<Double-Button-1>', lambda event: self.change_entry('delete', self.site))
+        delete_button.bind('<Double-Button-1>', lambda event: self.change_entry('delete', self.siteStrVar))
         ttk.Button(self.mainframe, text="Update",
-                   command=lambda: self.change_entry('update', self.site)) \
+                   command=lambda: self.change_entry('update', self.siteStrVar)) \
             .grid(column=2, row=9, sticky=W)
         ttk.Button(self.mainframe, text="Add",
-                   command=lambda: self.change_entry('add', self.site)) \
+                   command=lambda: self.change_entry('add', self.siteStrVar)) \
             .grid(column=2, row=9, sticky=E)
 
         self.padding()
@@ -171,7 +173,7 @@ class GUI:
             .grid(column=1, row=1, columnspan=2, rowspan=1, sticky=NS)
         # Write all credentials
         ttk.Button(self.mainframe, text='Print plain text of all Credentials', width=50,
-                   command=lambda: user.write_file(self.currentPin.get(), 'N', 'decoded')) \
+                   command=lambda: user.write_file(self.currentPinStrVar.get(), 'N', 'decoded')) \
             .grid(column=1, row=3, columnspan=2, rowspan=2, sticky=NS)
         # Change pin
         ttk.Button(self.mainframe, text='Change Pin',
@@ -183,9 +185,9 @@ class GUI:
             .grid(column=0, row=7, sticky=W)
         ttk.Label(self.mainframe, text="Pins must match") \
             .grid(column=2, row=8, sticky=W)
-        ttk.Entry(self.mainframe, textvariable=self.pin1) \
+        ttk.Entry(self.mainframe, textvariable=self.pin1StrVar) \
             .grid(column=0, row=7, columnspan=2, sticky=E)
-        ttk.Entry(self.mainframe, textvariable=self.pin2) \
+        ttk.Entry(self.mainframe, textvariable=self.pin2StrVar) \
             .grid(column=2, row=7, columnspan=2, sticky=W)
 
         self.padding()
@@ -199,7 +201,9 @@ class GUI:
         self.mainframe.columnconfigure(2, weight=1, minsize=180)
         self.mainframe.columnconfigure(3, weight=1, minsize=20)
         self.mainframe.rowconfigure(10, weight=1, minsize=20)
-        self.status_label = ttk.Label(self.mainframe, textvariable=self.status)
+        self.status_label = ttk.Label(self.mainframe, textvariable=self.statusStrVar)
+        self.mainframe.bind("<FocusOut>", lambda e: self.focus_from_app())
+        self.mainframe.bind("<FocusIn>", lambda e: self.focus_on_app())
 
     def padding(self):
         for child in self.mainframe.winfo_children():
@@ -219,50 +223,50 @@ class GUI:
     def submit_pin(self):
         # Primarily checks the pin against the file but also reloads the credsList used by all the User methods
         try:
-            user.read_file(self.currentPin.get())
+            user.read_file(self.currentPinStrVar.get())
         except cryptography.fernet.InvalidToken:
-            self.status.set('Invalid PIN')
+            self.statusStrVar.set('Invalid PIN')
             return
         except FileNotFoundError:
-            self.status.set('No File found')
+            self.statusStrVar.set('No File found')
             return
-        self.status.set('Ready to Search')
+        self.statusStrVar.set('Ready to Search')
         self.main_entries_page()
 
     def get_login(self, search):
         # Takes search input and checks for a matched login. Returns a generator to retrieve all matches
-        self.update_entries(['', '', '', '', self.status.get()])    # Clears entries but not Status box
+        self.update_entries(['', '', '', '', self.statusStrVar.get()])    # Clears entries but not Status box
         if search == '':
             return
-        if self.last != search:        # New searches won't match the "last" search nor will end of list
-            self.allMatches = user.credentials('login', search, self.currentPin.get())
+        if self.lastVar != search:        # New searches won't match the "last" search nor will end of list
+            self.allMatchesIter = user.credentials('login', search, self.currentPinStrVar.get())
         try:
-            next_entry = next(self.allMatches)
+            next_entry = next(self.allMatchesIter)
         except StopIteration:               # End of list if no matches or no more matches
-            if self.last != search:
+            if self.lastVar != search:
                 next_entry = ['', '', '', '', 'No matches found', -1]
             else:
                 next_entry = ['', '', '', '', 'End of matches', -1]
             search = ''                # Forces next search to start over
-        self.last = search             # If try succeeds, self.last will match search entry
+        self.lastVar = search             # If try succeeds, self.last will match search entry
         self.update_entries(next_entry)     # Successful search returns the list of strings
-        self.index = next_entry[5]          # Stores list index for the currently displayed search results
+        self.indexVar = next_entry[5]          # Stores list index for the currently displayed search results
 
     def update_entries(self, credentials):
         # Update entries with new values which can be empty to clear the boxes or will be the return from a search.
-        self.site.set(credentials[0])
-        self.user.set(credentials[1])
-        self.password.set(credentials[2])
-        self.comments.set(credentials[3])
-        self.status.set(credentials[4])
+        self.siteStrVar.set(credentials[0])
+        self.userStrVar.set(credentials[1])
+        self.passwordStrVar.set(credentials[2])
+        self.commentsStrVar.set(credentials[3])
+        self.statusStrVar.set(credentials[4])
 
     def change_entry(self, function, site):
         # Use the existing entry values to add, edit or delete the credentials to or from the list.
         site = site.get()
         if site == '':
             return None
-        new = [self.site.get(), self.user.get(), self.password.get(), self.comments.get()]
-        changed = user.credentials(function, site, self.currentPin.get(), new, self.index, 'DELETE')
+        new = [self.siteStrVar.get(), self.userStrVar.get(), self.passwordStrVar.get(), self.commentsStrVar.get()]
+        changed = user.credentials(function, site, self.currentPinStrVar.get(), new, self.indexVar, 'DELETE')
         self.update_entries(changed)    # Updates entries from the return of the previous call
 
     def password_show(self):
@@ -281,37 +285,55 @@ class GUI:
         # Copy contents of the corresponding entry to clipboard and tell the user it is done
         root.clipboard_clear()
         root.clipboard_append(button.get())
-        self.status.set(button)
+        self.statusStrVar.set(button)
 
     def load_new_file(self, entry):
         # Load all new credentials from a csv formatted file
         user.new_file(filedialog.askopenfile(initialdir="/").name, entry)
-        self.currentPin.set(entry)      # Reset the global pin to use the new pin for files
+        self.currentPinStrVar.set(entry)      # Reset the global pin to use the new pin for files
         self.top.destroy()
         self.submit_pin()               # Reloads the file from the new pin
-        self.search.set('*all*')        # Start the search box with *all* after adding a new file
+        self.searchStrVar.set('*all*')        # Start the search box with *all* after adding a new file
 
     def load_backup(self):
         # Reload the backup in case of a mistake in the file.
-        user.read_file(self.currentPin.get(), user.fkey.backupFile)
+        user.read_file(self.currentPinStrVar.get(), user.fkey.backupFile)
         self.submit_pin()
         self.update_entries(['', '', '', '', 'Backup File loaded', -1])
-        self.search.set('*all*')
+        self.searchStrVar.set('*all*')
 
     def change_pin(self):
         # Compare pins entered and then encrypting the credsList with the new key
-        pin1 = self.pin1.get()
-        pin2 = self.pin2.get()
+        pin1 = self.pin1StrVar.get()
+        pin2 = self.pin2StrVar.get()
         try:
-            self.status.set(user.change_pin(pin1, pin2))     # Changes pin if matched and valid pins
+            self.statusStrVar.set(user.change_pin(pin1, pin2))     # Changes pin if matched and valid pins
         except cryptography.fernet.InvalidToken:
-            self.status.set('Invalid PIN')
+            self.statusStrVar.set('Invalid PIN')
             return
-        self.currentPin.set(pin1)
-        self.pin1.set('')
-        self.pin2.set('')
+        self.currentPinStrVar.set(pin1)
+        self.pin1StrVar.set('')
+        self.pin2StrVar.set('')
 
+    def focus_on_app(self):
+        # Cancel timer when focus returns to app
+        try:
+            self.delay.cancel()
+        except:
+            pass
+
+    def focus_from_app(self):
+        # Start timer whenever focus moves from app
+        self.delay = Timer(interval=300.0, function=self.timed_quit)
+        self.delay.start()
+
+    def timed_quit(self):
+        # Quit program if timer expires.
+        root.focus_force()
+        root.quit()
 
 root = Tk()
 GUI(root)
 root.mainloop()
+
+
