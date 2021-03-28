@@ -8,7 +8,7 @@ import user
 import webbrowser
 
 
-VERSION = '1.3.0'
+VERSION = '1.3.1'
 
 
 # noinspection PyAttributeOutsideInit,PyUnresolvedReferences
@@ -319,21 +319,22 @@ class GUI:
         # Cancel timer when focus returns to app
         try:
             self.delay.cancel()
-        except:
+        except AttributeError:
             pass
 
     def focus_from_app(self):
         # Start timer whenever focus moves from app
-        self.delay = Timer(interval=300.0, function=self.timed_quit)
+        self.delay = Timer(interval=1.0, function=self.timed_quit)
         self.delay.start()
+
 
     def timed_quit(self):
         # Quit program if timer expires.
         root.focus_force()
-        root.quit()
+        self.mainframe.destroy()
+        ttk.Label(root, text='\tPassword Manager Logged out due to inactivity').grid(padx=15, pady=15, sticky=EW)
+
 
 root = Tk()
 GUI(root)
 root.mainloop()
-
-
