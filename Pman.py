@@ -3,12 +3,12 @@
 from tkinter import *
 from tkinter import ttk, filedialog
 from threading import Timer
-import cryptography
+from cryptography.fernet import InvalidToken
 import user
 import webbrowser
 
 
-VERSION = '1.3.1'
+VERSION = '1.3.2'
 
 
 # noinspection PyAttributeOutsideInit,PyUnresolvedReferences
@@ -224,7 +224,7 @@ class GUI:
         # Primarily checks the pin against the file but also reloads the credsList used by all the User methods
         try:
             user.read_file(self.currentPinStrVar.get())
-        except cryptography.fernet.InvalidToken:
+        except InvalidToken:
             self.statusStrVar.set('Invalid PIN')
             return
         except FileNotFoundError:
@@ -308,7 +308,7 @@ class GUI:
         pin2 = self.pin2StrVar.get()
         try:
             self.statusStrVar.set(user.change_pin(pin1, pin2))     # Changes pin if matched and valid pins
-        except cryptography.fernet.InvalidToken:
+        except InvalidToken:
             self.statusStrVar.set('Invalid PIN')
             return
         self.currentPinStrVar.set(pin1)
@@ -324,9 +324,8 @@ class GUI:
 
     def focus_from_app(self):
         # Start timer whenever focus moves from app
-        self.delay = Timer(interval=1.0, function=self.timed_quit)
+        self.delay = Timer(interval=300.0, function=self.timed_quit)
         self.delay.start()
-
 
     def timed_quit(self):
         # Quit program if timer expires.
