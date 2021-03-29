@@ -8,7 +8,7 @@ import user
 from webbrowser import open
 
 
-VERSION = '1.3.5'
+VERSION = '1.3.6'
 
 
 # noinspection PyAttributeOutsideInit,PyUnresolvedReferences
@@ -234,8 +234,6 @@ class GUI:
     def get_login(self, search):
         # Takes search input and checks for a matched login. Returns a generator to retrieve all matches
         self.update_entries(['', '', '', '', self.statusStrVar.get()])    # Clears entries but not Status box
-        if search == '':
-            return
         if self.lastVar != search:        # New searches won't match the "last" search nor will end of list
             self.allMatchesIter = user.credentials('login', search, self.currentPinStrVar.get())
         try:
@@ -245,7 +243,7 @@ class GUI:
                 next_entry = ['', '', '', '', 'No matches found', -1]
             else:
                 next_entry = ['', '', '', '', 'End of matches', -1]
-            search = ''                # Forces next search to start over
+            search = None                # Forces next search to start over
         self.lastVar = search             # If try succeeds, self.last will match search entry
         self.update_entries(next_entry)     # Successful search returns the list of strings
         self.indexVar = next_entry[5]          # Stores list index for the currently displayed search results
@@ -291,14 +289,12 @@ class GUI:
         self.currentPinStrVar.set(entry)      # Reset the global pin to use the new pin for files
         self.top.destroy()
         self.submit_pin()               # Reloads the file from the new pin
-        self.searchStrVar.set('*all*')        # Start the search box with *all* after adding a new file
 
     def load_backup(self):
         # Reload the backup in case of a mistake in the file.
         user.read_file(self.currentPinStrVar.get(), user.fkey.backupFile)
         self.submit_pin()
         self.update_entries(['', '', '', '', 'Backup File loaded', -1])
-        self.searchStrVar.set('*all*')
 
     def change_pin(self):
         # Compare pins entered and then encrypting the credsList with the new key

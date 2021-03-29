@@ -75,9 +75,8 @@ def print_creds(pin=None):
 
 
 def credentials(function, site, pin, new=None, index=-1, delete=None):
-    creds = log_in(site)
     if function == 'login':
-        return creds
+        return log_in(site)
     if function == 'add':
         return add_entry(new, pin)
     if function == 'update':
@@ -88,10 +87,8 @@ def credentials(function, site, pin, new=None, index=-1, delete=None):
 
 def log_in(search):
     for i, line in enumerate(credsList):
-        if search == '*all*':
-            yield line + ['Search again for next entry', i]
         if search.lower() in line[0].lower():       # ignore case
-            yield line + ['Credentials Found', i]
+            yield line + ['Search again for next match', i]
 
 
 def update_entry(index, new, pin):
