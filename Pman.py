@@ -8,10 +8,10 @@ import user
 from webbrowser import open
 
 
-VERSION = '1.3.6'
+VERSION = '1.4.0'
 
 
-# noinspection PyAttributeOutsideInit,PyUnresolvedReferences
+# noinspection PyAttributeOutsideInit
 class GUI:
 
     # Methods to create the GUI, and recreate it when moving to different pages.

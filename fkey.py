@@ -4,7 +4,7 @@
 import os
 import sys
 from shutil import copyfile
-
+from cryptography.fernet import Fernet
 
 def path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -24,6 +24,19 @@ def key(pin):
             start = sum(bytes(pin, 'utf-8')) % (44-chars)
             return bytes(fileName[:start]+pin+fileName[start+chars:], 'utf-8')
 
+def decrypt(pin, bytes):
+    return Fernet(key(pin)).decrypt(bytes)
+
+def encrypt(pin, bytes):
+    return Fernet(key(pin)).encrypt(bytes)
+
+def backup():
+    if not os.path.isfile(backupFile):
+        try:
+            copyfile(baseFile, backupFile)
+        except FileNotFoundError:
+            pass
+
 
 keyLocation = path('')
 baseFile = os.getcwd() + r'\info.txt'
@@ -32,10 +45,3 @@ decodedFile = os.getcwd()+r'\info_decoded.txt'
 
 if os.path.isfile(decodedFile):
     os.remove(decodedFile)
-
-def backup():
-    if not os.path.isfile(backupFile):
-        try:
-            copyfile(baseFile, backupFile)
-        except FileNotFoundError:
-            pass

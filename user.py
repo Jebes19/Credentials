@@ -1,7 +1,6 @@
 # Encrypts, decrypts and handles a file containing logins for a match to the user entered value for 'search'.
 # The search is returned as a generator so that the GUI can cycle through the matches.
 
-from cryptography.fernet import Fernet
 import fkey
 
 
@@ -10,7 +9,7 @@ def read_file(pin, file=fkey.baseFile):
     if pin is None:
         pin = input('Pin: ')
     with open(file, 'rb') as f:
-        allCreds = Fernet(fkey.key(pin)).decrypt(f.read()).decode().split('\n')
+        allCreds = fkey.decrypt(pin, f.read()).decode().split('\n')
     global credsList
     credsList = [cred.split(',') for cred in allCreds]
     return "Pin Accepted"
@@ -18,7 +17,7 @@ def read_file(pin, file=fkey.baseFile):
 
 # Encrypt and overwrite the current CredsList after it has been modified.
 def write_file(pin, backup=False, decoded=''):
-    if len(pin) not in range(1,44):
+    if len(pin) not in range(1, 44):
         return 'Pin of invalid length'
     if backup is True:
         fkey.backup()
@@ -27,7 +26,7 @@ def write_file(pin, backup=False, decoded=''):
         fileType = 'w'
         file = fkey.decodedFile
     else:
-        eCreds = Fernet(fkey.key(pin)).encrypt(bytes('\n'.join([','.join(entry) for entry in credsList]), 'utf-8'))
+        eCreds = fkey.encrypt(pin,bytes('\n'.join([','.join(entry) for entry in credsList]), 'utf-8'))
         fileType = 'wb'
         file = fkey.baseFile
     with open(file, fileType) as f:
@@ -39,7 +38,7 @@ def write_file(pin, backup=False, decoded=''):
 def change_pin(pin1, pin2):
     if pin1 != pin2:
         return "Pins don't match"
-    if len(pin1) not in range(1,44):
+    if len(pin1) not in range(1, 44):
         return 'Pin of invalid length'
     write_file(pin1, backup=True)
     return 'Pin changed'
@@ -48,8 +47,8 @@ def change_pin(pin1, pin2):
 def new_file(file, pin):
     # Read a new unencrypted Credentials csv type file and encrypt it as the working file.
     with open(file, 'r') as f:
-        preList = [cred.replace('\t', '')             # Remove tabs from lines
-                       .split(',')[:4]                # Split on commas and limit size to 4 items max
+        preList = [cred.replace('\t', '')               # Remove tabs from lines
+                       .split(',')[:4]                  # Split on commas and limit size to 4 items max
                    for cred in f.read().split('\n')]    # Read lines and removes newlines
         global credsList
         credsList = [group + [''] * (4 - len(group)) for group in preList]  # Expand size 4 items min
