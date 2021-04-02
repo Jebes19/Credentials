@@ -3,20 +3,24 @@
 
 import os
 import sys
+import config
 from shutil import copyfile
 from cryptography.fernet import Fernet
 
-def path(relative_path):
+
+def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
-        base_path = os.path.abspath(".")+'\\images'
+        base_path = r'C:\Users\usstwilk\PycharmProjects\Credentials\images'
+        #base_path = os.path.abspath(".")+'\\images'
     return os.path.join(base_path, relative_path)
 
 
-def key(pin):
+def keyOld(pin):
+    # Takes a pin and builds a Fernet key from the stored kin and replacing letters with the pin in the string
     chars = len(pin)
     for file in os.listdir(keyLocation):
         fileName, ext = os.path.splitext(file)
@@ -24,11 +28,37 @@ def key(pin):
             start = sum(bytes(pin, 'utf-8')) % (44-chars)
             return bytes(fileName[:start]+pin+fileName[start+chars:], 'utf-8')
 
-def decrypt(pin, bytes):
-    return Fernet(key(pin)).decrypt(bytes)
 
-def encrypt(pin, bytes):
-    return Fernet(key(pin)).encrypt(bytes)
+def new_key():
+    # Writes a new key file to the working directory
+    newKey = Fernet.generate_key()
+    with open(resource_path('') + newKey.decode() + '.txt', 'w') as f:
+        pass
+
+
+def key(pin):
+    i = 0
+    chars = len(pin)
+    what = sum(bytes(pin, 'utf-8'))
+    which = what % 10
+    where = what % (44-chars)
+    for file in os.listdir(keyLocation):
+        fileName, ext = os.path.splitext(file)
+        if len(fileName) == 44:
+            if i == which:
+                val = bytes(fileName[:where]+pin+fileName[where+chars:], 'utf-8')
+            i += 1
+    if i == 10:
+        return val
+
+
+def decrypt(pin, data):
+    return Fernet(key(pin)).decrypt(data)
+
+
+def encrypt(pin, data):
+    return Fernet(key(pin)).encrypt(data)
+
 
 def backup():
     if not os.path.isfile(backupFile):
@@ -38,10 +68,15 @@ def backup():
             pass
 
 
-keyLocation = path('')
-baseFile = os.getcwd() + r'\info.txt'
-backupFile = os.getcwd()+r'\info.bak'
-decodedFile = os.getcwd()+r'\info_decoded.txt'
+keyLocation = resource_path('')
+info_folder = config.info_folder
+baseFile = info_folder + r'\info.txt'
+backupFile = info_folder+r'\info.bak'
+decodedFile = info_folder+r'\info_PLAIN_TEXT.txt'
 
+# Clean up decoded file from a previous run when fkey is imported.
+# The file is a long term liability in case the user forgets to delete it or doesn't know it was written.
 if os.path.isfile(decodedFile):
     os.remove(decodedFile)
+
+print(key(input()))

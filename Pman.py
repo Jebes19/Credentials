@@ -1,14 +1,14 @@
 # InterfaceGUI to interact with user.py
 
+import user
 from tkinter import *
 from tkinter import ttk, filedialog
 from threading import Timer
 from cryptography.fernet import InvalidToken
-import user
-from webbrowser import open
+from webbrowser import open as web_open
 
 
-VERSION = '1.4.0'
+VERSION = '1.5.0'
 
 
 # noinspection PyAttributeOutsideInit
@@ -37,11 +37,11 @@ class GUI:
         self.indexVar = None
 
         # Import images
-        self.copy_image = PhotoImage(file=user.fkey.path('copy.png'), height=30, width=30)
-        self.settings_image = PhotoImage(file=user.fkey.path('settings.png'), height=30, width=30)
-        self.open_image = PhotoImage(file=user.fkey.path('open.png'), height=30, width=30)
-        self.password_image = PhotoImage(file=user.fkey.path('eye2.png'), height=30, width=30)
-        self.newFile_image = PhotoImage(file=user.fkey.path('NewFile.png'), height=30, width=30)
+        self.copy_image = PhotoImage(file=user.fkey.resource_path('copy.png'), height=30, width=30)
+        self.settings_image = PhotoImage(file=user.fkey.resource_path('settings.png'), height=30, width=30)
+        self.open_image = PhotoImage(file=user.fkey.resource_path('open.png'), height=30, width=30)
+        self.password_image = PhotoImage(file=user.fkey.resource_path('eye2.png'), height=30, width=30)
+        self.newFile_image = PhotoImage(file=user.fkey.resource_path('NewFile.png'), height=30, width=30)
 
         # Import standard window configuration
         self.build_page()
@@ -100,7 +100,7 @@ class GUI:
                    command=lambda: self.to_clip(self.siteStrVar)) \
             .grid(column=3, row=2, sticky=W)
         ttk.Button(self.mainframe, image=self.open_image, takefocus=0,
-                   command=lambda: open(self.siteStrVar.get(), new=2), ) \
+                   command=lambda: web_open(self.siteStrVar.get(), new=2), ) \
             .grid(column=0, row=2, sticky=E)
         ttk.Entry(self.mainframe, textvariable=self.siteStrVar) \
             .grid(column=1, row=2, columnspan=2, sticky=(W, E))
@@ -173,7 +173,8 @@ class GUI:
             .grid(column=1, row=1, columnspan=2, rowspan=1, sticky=NS)
         # Write all credentials
         ttk.Button(self.mainframe, text='Print plain text of all Credentials', width=50,
-                   command=lambda: user.write_file(self.currentPinStrVar.get(), 'N', 'decoded')) \
+                   command=lambda: [user.write_file(self.currentPinStrVar.get(), 'N', 'decoded'),
+                                    web_open(user.fkey.info_folder, new=2)]) \
             .grid(column=1, row=3, columnspan=2, rowspan=2, sticky=NS)
         # Change pin
         ttk.Button(self.mainframe, text='Change Pin',
@@ -268,13 +269,13 @@ class GUI:
     def password_show(self):
         # Show password, change image of button and remap command to password_hide
         self.password_entry['show'] = ''
-        self.password_image['file'] = user.fkey.path('eye_closed.png')
+        self.password_image['file'] = user.fkey.resource_path('eye_closed.png')
         self.show_password['command'] = self.password_hide
 
     def password_hide(self):
         # Hide password, change image of button and remap command to password_show
         self.password_entry['show'] = '*'
-        self.password_image['file'] = user.fkey.path('eye1.png')
+        self.password_image['file'] = user.fkey.resource_path('eye1.png')
         self.show_password['command'] = self.password_show
 
     def to_clip(self, button):

@@ -3,6 +3,8 @@
 
 import fkey
 
+credsList = []
+
 
 # Reading and writing the encrypted file
 def read_file(pin, file=fkey.baseFile):
@@ -21,12 +23,12 @@ def write_file(pin, backup=False, decoded=''):
         return 'Pin of invalid length'
     if backup is True:
         fkey.backup()
-    if decoded == 'decoded':        # Write a decoded file and drop the final end of list item
-        eCreds = '\n'.join([',\t\t'.join(entry) for entry in credsList[:-1]])
+    if decoded == 'decoded':        # Write a decoded file
+        eCreds = '\n'.join([',\t\t'.join(entry) for entry in credsList])
         fileType = 'w'
         file = fkey.decodedFile
     else:
-        eCreds = fkey.encrypt(pin,bytes('\n'.join([','.join(entry) for entry in credsList]), 'utf-8'))
+        eCreds = fkey.encrypt(pin, bytes('\n'.join([','.join(entry) for entry in credsList]), 'utf-8'))
         fileType = 'wb'
         file = fkey.baseFile
     with open(file, fileType) as f:
@@ -40,7 +42,7 @@ def change_pin(pin1, pin2):
         return "Pins don't match"
     if len(pin1) not in range(1, 44):
         return 'Pin of invalid length'
-    write_file(pin1, backup=True)
+    write_file(pin1, backup=False)
     return 'Pin changed'
 
 
@@ -74,6 +76,7 @@ def print_creds(pin=None):
 
 
 def credentials(function, site, pin, new=None, index=-1, delete=None):
+    read_file(pin)
     if function == 'login':
         return log_in(site)
     if function == 'add':
