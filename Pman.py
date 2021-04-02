@@ -8,7 +8,7 @@ from cryptography.fernet import InvalidToken
 from webbrowser import open as web_open
 
 
-VERSION = '1.6.0'
+VERSION = '1.6.1'
 
 
 # noinspection PyAttributeOutsideInit
@@ -178,7 +178,7 @@ class GUI:
             .grid(column=1, row=3, columnspan=2, rowspan=2, sticky=NS)
         # Change pin
         ttk.Button(self.mainframe, text='Change Pin',
-                   command=self.change_pin, width=50) \
+                   command=self.pin_change, width=50) \
             .grid(column=1, row=5, columnspan=2, rowspan=2, sticky=NS)
 
         # Change pin labels and entries
@@ -309,12 +309,13 @@ class GUI:
         self.submit_pin()
         self.update_entries(['', '', '', '', 'Backup File loaded', -1])
 
-    def change_pin(self):
+    def pin_change(self):
         # Compare pins entered and then encrypting the credsList with the new key
         pin1 = self.pin1StrVar.get()
         pin2 = self.pin2StrVar.get()
         try:
-            self.statusStrVar.set(user.change_pin(pin1, pin2))     # Changes pin if matched and valid pins
+            user.change_pin(pin1, pin2)
+            self.statusStrVar.set('PIN Changed')     # Changes pin if matched and valid pins
         except InvalidToken:
             self.statusStrVar.set('Invalid PIN')
             return

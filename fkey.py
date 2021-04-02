@@ -15,25 +15,15 @@ def resource_path(relative_path):
         base_path = sys._MEIPASS
     except Exception:
         base_path = r'C:\Users\usstwilk\PycharmProjects\Credentials\images'
-        #base_path = os.path.abspath(".")+'\\images'
+        # base_path = os.path.abspath(".")+'\\images'
     return os.path.join(base_path, relative_path)
-
-
-def keyOld(pin):
-    # Takes a pin and builds a Fernet key from the stored kin and replacing letters with the pin in the string
-    chars = len(pin)
-    for file in os.listdir(keyLocation):
-        fileName, ext = os.path.splitext(file)
-        if len(fileName) == 44:
-            start = sum(bytes(pin, 'utf-8')) % (44-chars)
-            return bytes(fileName[:start]+pin+fileName[start+chars:], 'utf-8')
 
 
 def new_key():
     # Writes a new key file to the working directory
     newKey = Fernet.generate_key()
-    with open(resource_path('') + newKey.decode() + '.txt', 'w') as f:
-        pass
+    with open(resource_path('') + newKey.decode() + '.txt', 'wb') as f:
+        f.write(Fernet.generate_key()+Fernet.generate_key())
 
 
 def key(pin):
@@ -50,6 +40,8 @@ def key(pin):
             i += 1
     if i == 10:
         return val
+    else:
+        print('keys corrupted')
 
 
 def decrypt(pin, data):
@@ -78,4 +70,3 @@ decodedFile = info_folder+r'\info_PLAIN_TEXT.txt'
 # The file is a long term liability in case the user forgets to delete it or doesn't know it was written.
 if os.path.isfile(decodedFile):
     os.remove(decodedFile)
-

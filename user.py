@@ -13,10 +13,11 @@ def read_file(pin, file=fkey.baseFile):
     with open(file, 'rb') as f:
         allCreds = fkey.decrypt(pin, f.read()).decode().split('\n')
     if allCreds == ['']:
-        return 'Empty File'
+        print('Empty File')
+        return
     global credsList
     credsList = [cred.split(',') for cred in allCreds]
-    return "Pin Accepted"
+    print("Pin Accepted")
 
 
 # Encrypt and overwrite the current CredsList after it has been modified.
@@ -38,7 +39,7 @@ def write_file(pin, backup=False, decoded='', blank=False):
         file = fkey.baseFile
     with open(file, fileType) as f:
         f.write(eCreds)
-    return 'File Written'
+    print('File Written')
 
 
 # Change the encryption key of the file.
@@ -48,7 +49,7 @@ def change_pin(pin1, pin2):
     if len(pin1) not in range(1, 44):
         return 'Pin of invalid length'
     write_file(pin1, backup=False)
-    return 'Pin changed'
+    print('Pin changed')
 
 
 def new_file(file, pin):
