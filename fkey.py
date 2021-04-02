@@ -79,4 +79,3 @@ decodedFile = info_folder+r'\info_PLAIN_TEXT.txt'
 if os.path.isfile(decodedFile):
     os.remove(decodedFile)
 
-print(key(input()))

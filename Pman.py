@@ -8,7 +8,7 @@ from cryptography.fernet import InvalidToken
 from webbrowser import open as web_open
 
 
-VERSION = '1.5.0'
+VERSION = '1.6.0'
 
 
 # noinspection PyAttributeOutsideInit
@@ -41,7 +41,8 @@ class GUI:
         self.settings_image = PhotoImage(file=user.fkey.resource_path('settings.png'), height=30, width=30)
         self.open_image = PhotoImage(file=user.fkey.resource_path('open.png'), height=30, width=30)
         self.password_image = PhotoImage(file=user.fkey.resource_path('eye2.png'), height=30, width=30)
-        self.newFile_image = PhotoImage(file=user.fkey.resource_path('NewFile.png'), height=30, width=30)
+        self.new_file_image = PhotoImage(file=user.fkey.resource_path('new_file.png'), height=30, width=30)
+        self.load_file_image = PhotoImage(file=user.fkey.resource_path('load_file.png'), height=30, width=30)
 
         # Import standard window configuration
         self.build_page()
@@ -65,10 +66,9 @@ class GUI:
         self.pin_entry.focus()
 
         # New File Button
-        ttk.Button(self.mainframe, text="New File", image=self.newFile_image, takefocus=0,
+        ttk.Button(self.mainframe, text="New File", image=self.load_file_image, takefocus=0,
                    command=self.popup_select_new_file) \
             .grid(column=0, row=0, rowspan=2, sticky=W)
-
         self.padding()
 
     def main_entries_page(self):
@@ -210,12 +210,19 @@ class GUI:
 
     def popup_select_new_file(self):
         top = self.top = Toplevel(root)
-        Label(top, text="PIN to encode File").pack(padx=10, pady=5)
+        ttk.Label(top, text="PIN to encode File").grid(row=0, column=0, columnspan=3)
         entry = Entry(top, justify='center')
-        entry.pack(padx=10, pady=5)
-        entry.bind("<Return>", lambda event: self.load_new_file(entry.get()))
+        entry.grid(row=1, column=0, columnspan=3)
         entry.focus()
-        Button(top, text='Ok', command=lambda: self.load_new_file(entry.get())).pack(padx=10, pady=5)
+        ttk.Button(top, text='Blank File', image=self.new_file_image, takefocus=0,
+                   command=lambda: self.load_new_file(entry.get(),blank=True)).grid(row=3, column=0)
+        ttk.Button(top, text='Load File', image=self.load_file_image,
+                   command=lambda: self.load_new_file(entry.get())).grid(row=3, column=2)
+        ttk.Label(top, text='Blank File').grid(row=2, column=0)
+        ttk.Label(top, text='Load File').grid(row=2, column=2)
+        for child in top.winfo_children():
+            child.grid_configure(padx=15, pady=10)
+
 
     # Methods to interact with the various entry boxes and buttons.
 
@@ -284,9 +291,14 @@ class GUI:
         root.clipboard_append(button.get())
         self.statusStrVar.set(button)
 
-    def load_new_file(self, entry):
+    def load_new_file(self, entry,blank=False):
         # Load all new credentials from a csv formatted file
-        user.new_file(filedialog.askopenfile(initialdir="/").name, entry)
+        if entry == '':
+            return
+        if blank is False:
+            user.new_file(filedialog.askopenfile(initialdir="/").name, entry)
+        else:
+            user.write_file(entry,blank=blank)
         self.currentPinStrVar.set(entry)      # Reset the global pin to use the new pin for files
         self.top.destroy()
         self.submit_pin()               # Reloads the file from the new pin

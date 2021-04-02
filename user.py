@@ -12,23 +12,28 @@ def read_file(pin, file=fkey.baseFile):
         pin = input('Pin: ')
     with open(file, 'rb') as f:
         allCreds = fkey.decrypt(pin, f.read()).decode().split('\n')
+    if allCreds == ['']:
+        return 'Empty File'
     global credsList
     credsList = [cred.split(',') for cred in allCreds]
     return "Pin Accepted"
 
 
 # Encrypt and overwrite the current CredsList after it has been modified.
-def write_file(pin, backup=False, decoded=''):
+def write_file(pin, backup=False, decoded='', blank=False):
+    all_items = credsList
     if len(pin) not in range(1, 44):
         return 'Pin of invalid length'
     if backup is True:
         fkey.backup()
+    if blank is True:
+        all_items = [['Site,Username,Password,Comments']]
     if decoded == 'decoded':        # Write a decoded file
-        eCreds = '\n'.join([',\t\t'.join(entry) for entry in credsList])
+        eCreds = '\n'.join([',\t\t'.join(entry) for entry in all_items])
         fileType = 'w'
         file = fkey.decodedFile
     else:
-        eCreds = fkey.encrypt(pin, bytes('\n'.join([','.join(entry) for entry in credsList]), 'utf-8'))
+        eCreds = fkey.encrypt(pin, bytes('\n'.join([','.join(entry) for entry in all_items]), 'utf-8'))
         fileType = 'wb'
         file = fkey.baseFile
     with open(file, fileType) as f:
