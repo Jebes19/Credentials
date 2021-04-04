@@ -8,7 +8,7 @@ from cryptography.fernet import InvalidToken
 from webbrowser import open as web_open
 
 
-VERSION = '1.6.1'
+VERSION = '1.7.0'
 
 
 # noinspection PyAttributeOutsideInit
@@ -27,7 +27,7 @@ class GUI:
         self.siteStrVar = StringVar(name='Site copied to clipboard')
         self.userStrVar = StringVar(name='User copied to clipboard')
         self.passwordStrVar = StringVar(name='Password copied to clipboard')
-        self.commentsStrVar = StringVar()
+        self.URLcommentsStrVar = StringVar(name='URL')
         self.searchStrVar = StringVar()
         self.pin1StrVar = StringVar()
         self.pin2StrVar = StringVar()
@@ -93,15 +93,12 @@ class GUI:
         ttk.Label(self.mainframe, text="Status") \
            .grid(column=1, row=1, sticky=E)
         self.status_label.grid(column=2, row=1, sticky=W)
-        # Site label, button, entry and site open button
+        # Site label, button, and entry
         ttk.Label(self.mainframe, text="Site") \
             .grid(column=1, row=1, columnspan=2, sticky=(W, S))
         ttk.Button(self.mainframe, image=self.copy_image, takefocus=0,
                    command=lambda: self.to_clip(self.siteStrVar)) \
             .grid(column=3, row=2, sticky=W)
-        ttk.Button(self.mainframe, image=self.open_image, takefocus=0,
-                   command=lambda: web_open(self.siteStrVar.get(), new=2), ) \
-            .grid(column=0, row=2, sticky=E)
         ttk.Entry(self.mainframe, textvariable=self.siteStrVar) \
             .grid(column=1, row=2, columnspan=2, sticky=(W, E))
         # Username label, button, and entry
@@ -123,11 +120,16 @@ class GUI:
         self.show_password = ttk.Button(self.mainframe, takefocus=0, image=self.password_image,
                                         command=self.password_show)
         self.show_password.grid(column=0, row=6, sticky=W)
-        # Comments label and entry
-        ttk.Label(self.mainframe, text="Comments") \
+        # Comments label, entry, and open site button
+        ttk.Label(self.mainframe, text="URL or Comments") \
             .grid(column=1, columnspan=2, row=7, sticky=(W, S))
-        ttk.Entry(self.mainframe, textvariable=self.commentsStrVar) \
+        ttk.Entry(self.mainframe, textvariable=self.URLcommentsStrVar) \
             .grid(column=1, row=8, columnspan=2, sticky=(W, E))
+        self.open_site = ttk.Button(self.mainframe, image=self.open_image, takefocus=0,
+                   command=lambda: web_open(self.URLcommentsStrVar.get(), new=2))
+        self.open_site.grid(column=0, row=8, sticky=E)
+        # Add trace to URLComments variable to check for an valid website and update button status.
+        self.URLcommentsStrVar.trace('w',lambda a, b, c: self.URL_button_status())
         # Add, Update and Delete buttons
         delete_button = ttk.Button(self.mainframe, text="Delete",
                                    command=lambda: self.statusStrVar.set('Double click "Delete" to confirm'))
@@ -215,14 +217,13 @@ class GUI:
         entry.grid(row=1, column=0, columnspan=3)
         entry.focus()
         ttk.Button(top, text='Blank File', image=self.new_file_image, takefocus=0,
-                   command=lambda: self.load_new_file(entry.get(),blank=True)).grid(row=3, column=0)
+                   command=lambda: self.load_new_file(entry.get(), blank=True)).grid(row=3, column=0)
         ttk.Button(top, text='Load File', image=self.load_file_image,
                    command=lambda: self.load_new_file(entry.get())).grid(row=3, column=2)
         ttk.Label(top, text='Blank File').grid(row=2, column=0)
         ttk.Label(top, text='Load File').grid(row=2, column=2)
         for child in top.winfo_children():
             child.grid_configure(padx=15, pady=10)
-
 
     # Methods to interact with the various entry boxes and buttons.
 
@@ -261,7 +262,7 @@ class GUI:
         self.siteStrVar.set(credentials[0])
         self.userStrVar.set(credentials[1])
         self.passwordStrVar.set(credentials[2])
-        self.commentsStrVar.set(credentials[3])
+        self.URLcommentsStrVar.set(credentials[3])
         self.statusStrVar.set(credentials[4])
 
     def change_entry(self, function, site):
@@ -269,7 +270,7 @@ class GUI:
         site = site.get()
         if site == '':
             return None
-        new = [self.siteStrVar.get(), self.userStrVar.get(), self.passwordStrVar.get(), self.commentsStrVar.get()]
+        new = [self.siteStrVar.get(), self.userStrVar.get(), self.passwordStrVar.get(), self.URLcommentsStrVar.get()]
         changed = user.credentials(function, site, self.currentPinStrVar.get(), new, self.indexVar, 'DELETE')
         self.update_entries(changed)    # Updates entries from the return of the previous call
 
@@ -291,14 +292,14 @@ class GUI:
         root.clipboard_append(button.get())
         self.statusStrVar.set(button)
 
-    def load_new_file(self, entry,blank=False):
+    def load_new_file(self, entry, blank=False):
         # Load all new credentials from a csv formatted file
         if entry == '':
             return
         if blank is False:
             user.new_file(filedialog.askopenfile(initialdir="/").name, entry)
         else:
-            user.write_file(entry,blank=blank)
+            user.write_file(entry, blank=blank)
         self.currentPinStrVar.set(entry)      # Reset the global pin to use the new pin for files
         self.top.destroy()
         self.submit_pin()               # Reloads the file from the new pin
@@ -322,6 +323,15 @@ class GUI:
         self.currentPinStrVar.set(pin1)
         self.pin1StrVar.set('')
         self.pin2StrVar.set('')
+
+
+    def URL_button_status(self):
+        # Scans the Comment string for 'http' and sets the open site to available if found
+        if 'http' in self.URLcommentsStrVar.get():
+            self.open_site.configure(state='normal')
+        else:
+            self.open_site.config(state='disabled')
+
 
     def focus_on_app(self):
         # Cancel timer when focus returns to app
