@@ -25,7 +25,7 @@ def new_key():
     with open(resource_path('') + newKey.decode() + '.txt', 'wb') as f:
         f.write(Fernet.generate_key()+Fernet.generate_key())
 
-
+    # todo make key a class
 def key(pin):
     i = 0
     chars = len(pin)
@@ -63,8 +63,8 @@ def backup():
 keyLocation = resource_path('')
 info_folder = config.info_folder
 baseFile = info_folder + r'\info.txt'
-backupFile = info_folder+r'\info.bak'
-decodedFile = info_folder+r'\info_PLAIN_TEXT.txt'
+backupFile = info_folder + r'\info.bak'
+decodedFile = info_folder + r'\info_PLAIN_TEXT.txt'
 
 # Clean up decoded file from a previous run when fkey is imported.
 # The file is a long term liability in case the user forgets to delete it or doesn't know it was written.

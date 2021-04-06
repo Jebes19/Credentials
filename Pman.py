@@ -8,7 +8,7 @@ from cryptography.fernet import InvalidToken
 from webbrowser import open as web_open
 
 
-VERSION = '1.7.0'
+VERSION = '1.7.1'
 
 
 # noinspection PyAttributeOutsideInit
@@ -23,11 +23,12 @@ class GUI:
         main.rowconfigure(0, weight=1)
 
         # Initialize all the variables
+        self.timeOutIntVar = IntVar(value=300)    # 5 minute timeout
         self.currentPinStrVar = StringVar()
         self.siteStrVar = StringVar(name='Site copied to clipboard')
         self.userStrVar = StringVar(name='User copied to clipboard')
         self.passwordStrVar = StringVar(name='Password copied to clipboard')
-        self.URLcommentsStrVar = StringVar(name='URL')
+        self.URL_commentsStrVar = StringVar(name='URL')
         self.searchStrVar = StringVar()
         self.pin1StrVar = StringVar()
         self.pin2StrVar = StringVar()
@@ -123,13 +124,13 @@ class GUI:
         # Comments label, entry, and open site button
         ttk.Label(self.mainframe, text="URL or Comments") \
             .grid(column=1, columnspan=2, row=7, sticky=(W, S))
-        ttk.Entry(self.mainframe, textvariable=self.URLcommentsStrVar) \
+        ttk.Entry(self.mainframe, textvariable=self.URL_commentsStrVar) \
             .grid(column=1, row=8, columnspan=2, sticky=(W, E))
         self.open_site = ttk.Button(self.mainframe, image=self.open_image, takefocus=0,
-                   command=lambda: web_open(self.URLcommentsStrVar.get(), new=2))
+                                    command=lambda: web_open(self.URL_commentsStrVar.get(), new=2))
         self.open_site.grid(column=0, row=8, sticky=E)
         # Add trace to URLComments variable to check for an valid website and update button status.
-        self.URLcommentsStrVar.trace('w',lambda a, b, c: self.URL_button_status())
+        self.URL_commentsStrVar.trace('w', lambda a, b, c: self.url_button_status())
         # Add, Update and Delete buttons
         delete_button = ttk.Button(self.mainframe, text="Delete",
                                    command=lambda: self.statusStrVar.set('Double click "Delete" to confirm'))
@@ -162,8 +163,7 @@ class GUI:
             .grid(column=0, row=0, sticky=W)
 
         # Status labels
-        ttk.Label(self.mainframe, text="Status") \
-           .grid(column=1, row=0, sticky=W)
+
         self.status_label.grid(column=1, row=0, columnspan=2, sticky=E)
 
         # Load file buttons
@@ -190,6 +190,14 @@ class GUI:
             .grid(column=0, row=7, columnspan=2, sticky=E)
         ttk.Entry(self.mainframe, textvariable=self.pin2StrVar) \
             .grid(column=2, row=7, columnspan=2, sticky=W)
+
+        # Timeout checkbox
+        self.timeout_button = ttk.Checkbutton(self.mainframe,
+                                              text="1 hour timeout",
+                                              variable=self.timeOutIntVar,
+                                              offvalue=300,
+                                              onvalue=3600)
+        self.timeout_button.grid(column=1, row=0, sticky=W)
 
         self.padding()
 
@@ -262,7 +270,7 @@ class GUI:
         self.siteStrVar.set(credentials[0])
         self.userStrVar.set(credentials[1])
         self.passwordStrVar.set(credentials[2])
-        self.URLcommentsStrVar.set(credentials[3])
+        self.URL_commentsStrVar.set(credentials[3])
         self.statusStrVar.set(credentials[4])
 
     def change_entry(self, function, site):
@@ -270,7 +278,7 @@ class GUI:
         site = site.get()
         if site == '':
             return None
-        new = [self.siteStrVar.get(), self.userStrVar.get(), self.passwordStrVar.get(), self.URLcommentsStrVar.get()]
+        new = [self.siteStrVar.get(), self.userStrVar.get(), self.passwordStrVar.get(), self.URL_commentsStrVar.get()]
         changed = user.credentials(function, site, self.currentPinStrVar.get(), new, self.indexVar, 'DELETE')
         self.update_entries(changed)    # Updates entries from the return of the previous call
 
@@ -324,14 +332,12 @@ class GUI:
         self.pin1StrVar.set('')
         self.pin2StrVar.set('')
 
-
-    def URL_button_status(self):
+    def url_button_status(self):
         # Scans the Comment string for 'http' and sets the open site to available if found
-        if 'http' in self.URLcommentsStrVar.get():
+        if 'http' in self.URL_commentsStrVar.get():
             self.open_site.configure(state='normal')
         else:
             self.open_site.config(state='disabled')
-
 
     def focus_on_app(self):
         # Cancel timer when focus returns to app
@@ -342,7 +348,7 @@ class GUI:
 
     def focus_from_app(self):
         # Start timer whenever focus moves from app
-        self.delay = Timer(interval=300.0, function=self.timed_quit)
+        self.delay = Timer(interval=self.timeOutIntVar.get(), function=self.timed_quit)
         self.delay.start()
 
     def timed_quit(self):
