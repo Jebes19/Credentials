@@ -25,7 +25,7 @@ def new_key():
     with open(resource_path('') + newKey.decode() + '.txt', 'wb') as f:
         f.write(Fernet.generate_key()+Fernet.generate_key())
 
-    # todo make key a class
+
 def key(pin):
     i = 0
     chars = len(pin)

@@ -1,14 +1,22 @@
 # InterfaceGUI to interact with user.py
 
-import user
 from tkinter import *
 from tkinter import ttk, filedialog
 from threading import Timer
 from cryptography.fernet import InvalidToken
 from webbrowser import open as web_open
 
+try:
+    import config
+except ModuleNotFoundError:
+    with open('config.py', 'w') as f:
+        f.write('info_folder = r'+"'"+filedialog.askdirectory(title='Select Folder for Crednentials file')+"'")
+    quit()
 
-VERSION = '1.7.1'
+import user
+
+
+VERSION = '1.7.2'
 
 
 # noinspection PyAttributeOutsideInit
@@ -335,7 +343,7 @@ class GUI:
     def url_button_status(self):
         # Scans the Comment string for 'http' and sets the open site to available if found
         if 'http' in self.URL_commentsStrVar.get():
-            self.open_site.configure(state='normal')
+            self.open_site.config(state='normal')
         else:
             self.open_site.config(state='disabled')
 

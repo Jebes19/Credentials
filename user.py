@@ -5,7 +5,6 @@ import fkey
 
 credsList = []
 
-
 # Reading and writing the encrypted file
 def read_file(pin, file=fkey.baseFile):
     if pin is None:
@@ -17,6 +16,7 @@ def read_file(pin, file=fkey.baseFile):
         return
     global credsList
     credsList = [cred.split(',') for cred in allCreds]
+    return credsList
     print("Pin Accepted")
 
 
@@ -126,6 +126,7 @@ def del_entry(index, delete, pin):
         return ['', '', '', '', 'Credentials deleted', -1]
 
 
+
+
 if __name__ == "__main__":
-    read_file(None)
-    write_file('', decoded='decoded')
+    pass
