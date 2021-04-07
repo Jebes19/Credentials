@@ -3,7 +3,6 @@
 
 import os
 import sys
-import config
 from shutil import copyfile
 from cryptography.fernet import Fernet
 

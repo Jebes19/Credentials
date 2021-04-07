@@ -10,7 +10,7 @@ try:
     open('config.txt', 'r')
 except FileNotFoundError:
     with open('config.txt', 'w') as f:
-        f.write(filedialog.askdirectory(title='Select Folder for Crednentials file'))
+        f.write(filedialog.askdirectory(title='Select Folder for Credentials file'))
     quit()
 
 import user

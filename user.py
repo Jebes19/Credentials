@@ -5,6 +5,7 @@ import fkey
 
 credsList = []
 
+
 # Reading and writing the encrypted file
 def read_file(pin, file=fkey.baseFile):
     if pin is None:
@@ -16,7 +17,6 @@ def read_file(pin, file=fkey.baseFile):
         return
     global credsList
     credsList = [cred.split(',') for cred in allCreds]
-    return credsList
     print("Pin Accepted")
 
 
