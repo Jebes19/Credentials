@@ -59,9 +59,10 @@ def backup():
         except FileNotFoundError:
             pass
 
+with open(r'config.txt','r') as f:
+    info_folder = f.read()
 
 keyLocation = resource_path('')
-info_folder = config.info_folder
 baseFile = info_folder + r'\info.txt'
 backupFile = info_folder + r'\info.bak'
 decodedFile = info_folder + r'\info_PLAIN_TEXT.txt'

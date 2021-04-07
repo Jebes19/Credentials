@@ -7,16 +7,16 @@ from cryptography.fernet import InvalidToken
 from webbrowser import open as web_open
 
 try:
-    import config
-except ModuleNotFoundError:
-    with open('config.py', 'w') as f:
-        f.write('info_folder = r'+"'"+filedialog.askdirectory(title='Select Folder for Crednentials file')+"'")
+    open('config.txt', 'r')
+except FileNotFoundError:
+    with open('config.txt', 'w') as f:
+        f.write(filedialog.askdirectory(title='Select Folder for Crednentials file'))
     quit()
 
 import user
 
 
-VERSION = '1.7.2'
+VERSION = '1.7.3'
 
 
 # noinspection PyAttributeOutsideInit
