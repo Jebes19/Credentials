@@ -6,13 +6,6 @@ from threading import Timer
 from cryptography.fernet import InvalidToken
 from webbrowser import open as web_open
 
-try:
-    open('config.txt', 'r')
-except FileNotFoundError:
-    with open('config.txt', 'w') as f:
-        f.write(filedialog.askdirectory(title='Select Folder for Credentials file'))
-    quit()
-
 import user
 
 

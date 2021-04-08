@@ -56,10 +56,11 @@ def backup():
             copyfile(baseFile, backupFile)
         except FileNotFoundError:
             pass
-
-with open(r'config.txt','r') as f:
-    info_folder = f.read()
-
+try:
+    with open(r'config.txt','r') as f:
+        info_folder = f.read()
+except FileNotFoundError:
+    info_folder = os.getcwd()
 keyLocation = resource_path('')
 baseFile = info_folder + r'\info.txt'
 backupFile = info_folder + r'\info.bak'
