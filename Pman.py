@@ -9,7 +9,7 @@ from webbrowser import open as web_open
 import user
 
 
-VERSION = '1.7.4'
+VERSION = '1.7.5'
 
 
 # noinspection PyAttributeOutsideInit
@@ -45,6 +45,7 @@ class GUI:
         self.password_image = PhotoImage(file=user.fkey.resource_path('eye2.png'), height=30, width=30)
         self.new_file_image = PhotoImage(file=user.fkey.resource_path('new_file.png'), height=30, width=30)
         self.load_file_image = PhotoImage(file=user.fkey.resource_path('load_file.png'), height=30, width=30)
+        self.main_menu_image = PhotoImage(file=user.fkey.resource_path('main_menu.png'), height=30, width=30)
 
         # Import standard window configuration
         self.build_page()
@@ -71,6 +72,11 @@ class GUI:
         ttk.Button(self.mainframe, text="New File", image=self.load_file_image, takefocus=0,
                    command=self.popup_select_new_file) \
             .grid(column=0, row=0, rowspan=2, sticky=W)
+
+        # New file label.
+        ttk.Label(self.mainframe, text="New File")\
+            .grid(column=0, row=10, sticky=W)
+
         self.padding()
 
     def main_entries_page(self):
@@ -127,7 +133,7 @@ class GUI:
             .grid(column=1, columnspan=2, row=7, sticky=(W, S))
         ttk.Entry(self.mainframe, textvariable=self.URL_commentsStrVar) \
             .grid(column=1, row=8, columnspan=2, sticky=(W, E))
-        self.open_site = ttk.Button(self.mainframe, image=self.open_image, takefocus=0,
+        self.open_site = ttk.Button(self.mainframe, image=self.open_image, takefocus=0, state='disabled',
                                     command=lambda: web_open(self.URL_commentsStrVar.get(), new=2))
         self.open_site.grid(column=0, row=8, sticky=E)
         # Add trace to URLComments variable to check for an valid website and update button status.
@@ -159,7 +165,7 @@ class GUI:
         self.mainframe.rowconfigure(6, weight=1, minsize=50)
 
         # Options Button, now returns to the Main Entries window.
-        ttk.Button(self.mainframe, text="Options", image=self.settings_image,
+        ttk.Button(self.mainframe, text="Options", image=self.main_menu_image,
                    command=self.main_entries_page) \
             .grid(column=0, row=0, sticky=W)
 
@@ -221,7 +227,7 @@ class GUI:
 
     def popup_select_new_file(self):
         top = self.top = Toplevel(root)
-        ttk.Label(top, text="PIN to encode File").grid(row=0, column=0, columnspan=3)
+        ttk.Label(top, text="PIN to encode New File").grid(row=0, column=0, columnspan=3)
         entry = Entry(top, justify='center')
         entry.grid(row=1, column=0, columnspan=3)
         entry.focus()
@@ -229,8 +235,8 @@ class GUI:
                    command=lambda: self.load_new_file(entry.get(), blank=True)).grid(row=3, column=0)
         ttk.Button(top, text='Load File', image=self.load_file_image,
                    command=lambda: self.load_new_file(entry.get())).grid(row=3, column=2)
-        ttk.Label(top, text='Blank File').grid(row=2, column=0)
-        ttk.Label(top, text='Load File').grid(row=2, column=2)
+        ttk.Label(top, text='Start with a new File').grid(row=2, column=0)
+        ttk.Label(top, text='Load an existing File').grid(row=2, column=2)
         for child in top.winfo_children():
             child.grid_configure(padx=15, pady=10)
 
