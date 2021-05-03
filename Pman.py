@@ -9,7 +9,7 @@ from webbrowser import open as web_open
 import user
 
 
-VERSION = '1.7.5'
+VERSION = '1.7.6'
 
 
 # noinspection PyAttributeOutsideInit
@@ -24,7 +24,7 @@ class GUI:
         main.rowconfigure(0, weight=1)
 
         # Initialize all the variables
-        self.timeOutIntVar = IntVar(value=300)    # 5 minute timeout
+        self.timeOutIntVar = IntVar(value=600)    # 10 minute timeout
         self.currentPinStrVar = StringVar()
         self.siteStrVar = StringVar(name='Site copied to clipboard')
         self.userStrVar = StringVar(name='User copied to clipboard')
@@ -138,18 +138,22 @@ class GUI:
         self.open_site.grid(column=0, row=8, sticky=E)
         # Add trace to URLComments variable to check for an valid website and update button status.
         self.URL_commentsStrVar.trace('w', lambda a, b, c: self.url_button_status())
+        self.siteStrVar.trace('w', lambda a, b, c: self.update_button_status())
+        self.userStrVar.trace('w', lambda a, b, c: self.update_button_status())
+        self.passwordStrVar.trace_add('write', lambda a, b, c: self.update_button_status())
         # Add, Update and Delete buttons
-        delete_button = ttk.Button(self.mainframe, text="Delete",
+        self.delete_button = ttk.Button(self.mainframe, text="Delete",
                                    command=lambda: self.statusStrVar.set('Double click "Delete" to confirm'))
-        delete_button.grid(column=1, row=9, sticky=W)
-        delete_button.bind('<Double-Button-1>', lambda event: self.change_entry('delete', self.siteStrVar))
-        ttk.Button(self.mainframe, text="Update",
-                   command=lambda: self.change_entry('update', self.siteStrVar)) \
-            .grid(column=2, row=9, sticky=W)
-        ttk.Button(self.mainframe, text="Add",
-                   command=lambda: self.change_entry('add', self.siteStrVar)) \
-            .grid(column=2, row=9, sticky=E)
+        self.delete_button.grid(column=1, row=9, sticky=W)
+        self.delete_button.bind('<Double-Button-1>', lambda event: self.change_entry('delete', self.siteStrVar))
+        self.update_button = ttk.Button(self.mainframe, text="Update", state='disabled',
+                   command=lambda: self.change_entry('update', self.siteStrVar))
+        self.update_button.grid(column=2, row=9, sticky=W)
+        self.add_button = ttk.Button(self.mainframe, text="Add", state='disabled',
+                   command=lambda: self.change_entry('add', self.siteStrVar))
+        self.add_button.grid(column=2, row=9, sticky=E)
 
+        self.mainframe.bind('<Key>', lambda event: self.update_button_status())
         self.padding()
 
     def options_page(self):
@@ -273,12 +277,14 @@ class GUI:
         self.indexVar = next_entry[5]          # Stores list index for the currently displayed search results
 
     def update_entries(self, credentials):
-        # Update entries with new values which can be empty to clear the boxes or will be the return from a search.
+        # Update entries which can be empty to clear the boxes or will be the return from a search. Also, sets buttons
         self.siteStrVar.set(credentials[0])
         self.userStrVar.set(credentials[1])
         self.passwordStrVar.set(credentials[2])
         self.URL_commentsStrVar.set(credentials[3])
         self.statusStrVar.set(credentials[4])
+        self.update_button.config(state='disabled')
+        self.add_button.config(state='disabled')
 
     def change_entry(self, function, site):
         # Use the existing entry values to add, edit or delete the credentials to or from the list.
@@ -345,6 +351,11 @@ class GUI:
             self.open_site.config(state='normal')
         else:
             self.open_site.config(state='disabled')
+
+    def update_button_status(self):
+        # Is called whenever a key stroke might change a data entry
+        self.update_button.config(state='normal')
+        self.add_button.config(state='normal')
 
     def focus_on_app(self):
         # Cancel timer when focus returns to app

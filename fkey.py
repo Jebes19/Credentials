@@ -13,6 +13,7 @@ def resource_path(relative_path):
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS+'\\images'
     except Exception:
+        #base_path = os.path.abspath(".")+'\\images'
         base_path = os.path.abspath(".")+'\\images'
     return os.path.join(base_path, relative_path)
 
@@ -57,7 +58,7 @@ def backup():
         except FileNotFoundError:
             pass
 try:
-    with open(r'config.txt','r') as f:
+    with open(r'C:\Users\usstwilk\PycharmProjects\Credentials\config.txt','r') as f:
         info_folder = f.read()
 except FileNotFoundError:
     info_folder = os.getcwd()
