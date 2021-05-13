@@ -7,17 +7,6 @@ import fkey
 from shutil import copyfile
 from cryptography.fernet import Fernet
 
-
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    try:
-        # PyInstaller creates a temp folder and then runs script in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = mod_folder
-    return os.path.join(base_path, relative_path)
-
-
 def new_key():
     # Writes a new key file to the working directory
     newKey = Fernet.generate_key()
@@ -52,22 +41,29 @@ def encrypt(code, data):
 
 
 def backup():
-    if not os.path.isfile(backupFile):
-        try:
-            copyfile(baseFile, backupFile)
-        except FileNotFoundError:
-            pass
+    try:
+        copyfile(baseFile, backupFile)
+        print('Info.txt backed up')
+    except FileNotFoundError:
+        print('No info.txt file in folder')
 
-mod_folder = os.path.dirname(fkey.__file__)
+try:
+    # PyInstaller creates a temp folder and then runs script in _MEIPASS
+    base_path = sys._MEIPASS
+    module_folder = os.getcwd()
+except Exception:
+    base_path = module_folder = os.path.dirname(fkey.__file__)
 
-keyLocation = resource_path('images') #needs to be maintained as the fkey location
+keyLocation = base_path+r'\images' #needs to be maintained as the fkey location
+images = keyLocation
 
-with open(mod_folder+r'\config.txt','r') as f:
-    info_folder = f.read()
+with open(module_folder+r'\config.txt', 'r') as file:
+    info_folder = file.read()
 
 baseFile = info_folder + r'\info.txt'
 backupFile = info_folder + r'\info.bak'
 decodedFile = info_folder + r'\info_PLAIN_TEXT.txt'
+
 
 # Clean up decoded file from a previous run when fkey is imported.
 # The file is a long term liability in case the user forgets to delete it or doesn't know it was written.

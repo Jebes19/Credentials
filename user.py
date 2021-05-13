@@ -4,20 +4,11 @@
 import fkey
 
 
-class infoFile:
+class InfoFile:
 
-    def __init__(self,code,file=fkey.baseFile):
-        # Instantiate a new file of credentials. If no file name is given the default encypted info.txt is expected.
-        # If a new filename is given, that will be read as plain text and will be encrypted to info.txt for later use
-        if file!=fkey.baseFile: # A new unencrypted file
-            with open(file, 'r') as f:
-                preList = [cred.replace('\t', '')               # Remove tabs from lines
-                        .split(',')[:4]                  # Split on commas and limit size to 4 items max
-                        for cred in f.read().split('\n')]    # Read lines and removes newlines
-                infoList = [group + [''] * (4 - len(group)) for group in preList]  # Expand size 4 items min
-                write_file(code, infoList, backup=True)
-                print('{} read and encoded'.format(fkey.baseFile))
-        with open(fkey.baseFile, 'rb') as f:
+    def __init__(self, code, file=fkey.baseFile):
+        # Instantiate a new read of the file of credentials.
+        with open(file, 'rb') as f:
             allCreds = fkey.decrypt(code, f.read()).decode().split('\n')
             self.infoList = [cred.split(',') for cred in allCreds]
             self.code = code
@@ -35,13 +26,13 @@ class infoFile:
 
     # Print out the entire encrypted credentials file to review
     # Currently not used by InfoGUI
-    def print_creds(self, code=None):
+    def print_creds(self):
         print('\n')
         for line in self.infoList:
             print(line)
         return 'Creds List printed'
 
-    def update_entry(self, new:[]):
+    def update_entry(self, new: []):
         # Takes the entries as newCreds and location as index. Overwrites all the values at that index
         index = new[5]
         self.infoList[index] = new[:4]
@@ -49,14 +40,14 @@ class infoFile:
         new[4] = 'Credentials updated'
         return new
 
-    def delete_entry(self, index : int):
+    def delete_entry(self, index: int):
         creds = self.infoList[index][0]
         self.infoList.pop(index)
-        write_file(self.code,self.infoList, backup=True)
+        write_file(self.code, self.infoList, backup=True)
         print(creds, 'deleted')
         return ['', '', '', '', 'Credentials deleted', -1]
 
-    def add_entry(self, new : []):
+    def add_entry(self, new: []):
         if new is None:
             new = [input('Site: '), input('Username: '), input('Password: '), input('Comments: ')]
         if new in self.infoList:
@@ -66,31 +57,43 @@ class infoFile:
         print(new[0] + ' added')
         return new + ['Credentials added', len(self.infoList) - 1]
 
-def search_results(infoList : list, search : str):
+
+def search_results(infolist: list, search: str):
     # takes an infoList, searches it and returns a generator object to cycle through matches one at a time.
-    for i, line in enumerate(infoList):
+    for i, line in enumerate(infolist):
         if search.lower() in line[0].lower():
             yield line+['Search again for next match', i]
 
 
-def write_file(code, infoList : list, backup=False, decoded=''):
+def new_file(code, file):
+    with open(file, 'r') as f:
+        preList = [cred.replace('\t', '')               # Remove tabs from lines
+                   .split(',')[:4]                  # Split on commas and limit size to 4 items max
+                   for cred in f.read().split('\n')]    # Read lines and removes newlines
+        infoList = [group + [''] * (4 - len(group)) for group in preList]  # Expand size 4 items min
+        write_file(code, infoList, backup=True)
+        print('{} read and encoded'.format(fkey.baseFile))
+
+
+def write_file(code, infolist: list, backup=False, decoded=''):
     if len(code) not in range(1, 44):
         return 'Code of invalid length'
     if backup is True:
         fkey.backup()
     if decoded == 'decoded':        # Write a decoded file
-        eCreds = '\n'.join([',\t\t'.join(entry) for entry in infoList])
+        eCreds = '\n'.join([',\t\t'.join(entry) for entry in infolist])
         fileType = 'w'
         file = fkey.decodedFile
     else:
-        eCreds = fkey.encrypt(code, bytes('\n'.join([','.join(entry) for entry in infoList]), 'utf-8'))
+        eCreds = fkey.encrypt(code, bytes('\n'.join([','.join(entry) for entry in infolist]), 'utf-8'))
         fileType = 'wb'
         file = fkey.baseFile
     with open(file, fileType) as f:
         f.write(eCreds)
     print('File Written')
 
+
 if __name__ == "__main__":
-    #x = infoFile('77',r'C:\Users\usstwilk\Documents\Useful docs\info\Copy.txt')
-    search = search_results('77','jira')
+    x = InfoFile('77', r'C:\Users\usstwilk\Documents\Useful docs\info\Copy.txt')
+    y = search_results(x.infoList, 'jira')
     pass

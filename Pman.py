@@ -6,9 +6,10 @@ from threading import Timer
 from cryptography.fernet import InvalidToken
 from webbrowser import open as web_open
 import user
+from fkey import images
 
 
-VERSION = '2.1.1'
+VERSION = '2.1.2'
 
 
 # noinspection PyAttributeOutsideInit
@@ -37,15 +38,14 @@ class GUI:
         self.infoFile = None
         self.lastVar = None
 
-
         # Import images
-        self.copy_image = PhotoImage(file=user.fkey.resource_path(r'images\copy.png'), height=30, width=30)
-        self.settings_image = PhotoImage(file=user.fkey.resource_path(r'images\settings.png'), height=30, width=30)
-        self.open_image = PhotoImage(file=user.fkey.resource_path(r'images\open.png'), height=30, width=30)
-        self.password_image = PhotoImage(file=user.fkey.resource_path(r'images\eye2.png'), height=30, width=30)
-        self.new_file_image = PhotoImage(file=user.fkey.resource_path(r'images\new_file.png'), height=30, width=30)
-        self.load_file_image = PhotoImage(file=user.fkey.resource_path(r'images\load_file.png'), height=30, width=30)
-        self.main_menu_image = PhotoImage(file=user.fkey.resource_path(r'images\main_menu.png'), height=30, width=30)
+        self.copy_image = PhotoImage(file=images+r'\copy.png', height=30, width=30)
+        self.settings_image = PhotoImage(file=images+r'\settings.png', height=30, width=30)
+        self.open_image = PhotoImage(file=images+r'\open.png', height=30, width=30)
+        self.password_image = PhotoImage(file=images+r'\eye2.png', height=30, width=30)
+        self.new_file_image = PhotoImage(file=images+r'\new_file.png', height=30, width=30)
+        self.load_file_image = PhotoImage(file=images+r'\load_from_file.png', height=30, width=30)
+        self.main_menu_image = PhotoImage(file=images+r'\main_menu.png', height=30, width=30)
 
         # Import standard window configuration
         self.build_page()
@@ -102,7 +102,7 @@ class GUI:
            .grid(column=1, row=1, sticky=E)
         self.status_label.grid(column=2, row=1, sticky=W)
         # Site label, button, and entry
-        ttk.Label(self.mainframe, text="Site") \
+        ttk.Label(self.mainframe, text="Site", ) \
             .grid(column=1, row=1, columnspan=2, sticky=(W, S))
         ttk.Button(self.mainframe, image=self.copy_image, takefocus=0,
                    command=lambda: self.to_clip(self.siteStrVar)) \
@@ -136,6 +136,20 @@ class GUI:
         self.open_site = ttk.Button(self.mainframe, image=self.open_image, takefocus=0, state='disabled',
                                     command=lambda: web_open(self.URL_commentsStrVar.get(), new=2))
         self.open_site.grid(column=0, row=8, sticky=E)
+
+        # Add, Update and Delete buttons
+        self.delete_button = ttk.Button(self.mainframe, text="Delete", state="disabled",
+                                        command=lambda: self.statusStrVar.set('Double click "Delete" to confirm'))
+        self.delete_button.grid(column=1, row=9, sticky=W)
+        self.delete_button.bind('<Double-Button-1>', lambda event: self.delete_entry(self.indexVar.get()))
+        self.update_button = ttk.Button(self.mainframe, text="Update", state='disabled',
+                                        command=lambda: self.update_or_add_entry())
+        self.update_button.grid(column=2, row=9, sticky=W)
+        self.add_button = ttk.Button(self.mainframe, text="Add", state='disabled',
+                                     command=lambda: self.update_or_add_entry())
+        self.add_button.grid(column=2, row=9, sticky=E)
+
+        # Variable Traces to change button states when variables change
         # Add trace to URLComments variable to check for an valid website and update button status.
         self.URL_commentsStrVar.trace_add('write', lambda a, b, c: self.url_button_status())
         # Add traces to entry variables to enable update and add buttons
@@ -144,18 +158,7 @@ class GUI:
         self.passwordStrVar.trace_add('write', lambda a, b, c: self.update_button_status())
         self.URL_commentsStrVar.trace_add('write', lambda a, b, c: self.update_button_status())
         # Add Trace to index to enable delete button if index > 0
-        #self.indexVar.trace_add('write', lambda a, b, c: self.update_button_status())
-        # Add, Update and Delete buttons
-        self.delete_button = ttk.Button(self.mainframe, text="Delete",
-                                   command=lambda: self.statusStrVar.set('Double click "Delete" to confirm'))
-        self.delete_button.grid(column=1, row=9, sticky=W)
-        self.delete_button.bind('<Double-Button-1>', lambda event: self.delete_entry())
-        self.update_button = ttk.Button(self.mainframe, text="Update", state='disabled',
-                   command=lambda: self.update_or_add_entry())
-        self.update_button.grid(column=2, row=9, sticky=W)
-        self.add_button = ttk.Button(self.mainframe, text="Add", state='disabled',
-                   command=lambda: self.update_or_add_entry())
-        self.add_button.grid(column=2, row=9, sticky=E)
+        self.indexVar.trace_add('write', lambda a, b, c: self.delete_button_status())
 
         self.padding()
 
@@ -189,8 +192,11 @@ class GUI:
             .grid(column=1, row=1, columnspan=2, rowspan=1, sticky=NS)
         # Write all credentials
         ttk.Button(self.mainframe, text='Print plain text of all Credentials', width=50,
-                   command=lambda: [user.write_file(self.activeCodeStrVar.get(), self.infoFile.infoList, decoded='decoded'),
-                                    web_open(user.fkey.info_folder, new=2)]) \
+                   command=lambda: [user.write_file(self.activeCodeStrVar.get(),
+                                    self.infoFile.infoList,
+                                    decoded='decoded'),
+                                    web_open(user.fkey.info_folder,
+                                    new=2)]) \
             .grid(column=1, row=3, columnspan=2, rowspan=2, sticky=NS)
         # Change code
         ttk.Button(self.mainframe, text='Change Code',
@@ -252,7 +258,7 @@ class GUI:
     def load_file(self):
         # Loads the list of credentials and stores the results to be manipulated
         try:
-            self.infoFile = user.infoFile(self.activeCodeStrVar.get())
+            self.infoFile = user.InfoFile(self.activeCodeStrVar.get())
             self.statusStrVar.set('Ready to Search')
             self.main_entries_page()
         except InvalidToken:
@@ -279,7 +285,6 @@ class GUI:
         self.update_entries(next_entry)     # Successful search returns the list of strings
         self.indexVar.set(next_entry[5])         # Stores list index for the currently displayed search results
 
-
     def update_entries(self, credentials):
         # Update entries which can be empty to clear the boxes or will be the return from a search. Also, sets buttons
         self.siteStrVar.set(credentials[0])
@@ -290,9 +295,11 @@ class GUI:
         self.update_button.config(state='disabled')
         self.add_button.config(state='disabled')
 
-    def delete_entry(self):
+    def delete_entry(self, index):
         # Updates entries from the return of the previous call
-        self.update_entries(self.infoFile.delete_entry(self.indexVar.get()))
+        if index == -1:
+            return
+        self.update_entries(self.infoFile.delete_entry(index))
         self.indexVar.set(-1)
 
     def update_or_add_entry(self):
@@ -306,18 +313,18 @@ class GUI:
             self.update_entries(self.infoFile.update_entry(new))
         except IndexError:
             self.update_entries(self.infoFile.add_entry(new))
-        self.infoFile = user.infoFile(self.activeCodeStrVar.get())
+        self.infoFile = user.InfoFile(self.activeCodeStrVar.get())
 
     def password_show(self):
         # Show password, change image of button and remap command to password_hide
         self.password_entry['show'] = ''
-        self.password_image['file'] = user.fkey.resource_path(r'images\eye_closed.png')
+        self.password_image['file'] = images+r'\eye_closed.png'
         self.show_password['command'] = self.password_hide
 
     def password_hide(self):
         # Hide password, change image of button and remap command to password_show
         self.password_entry['show'] = '*'
-        self.password_image['file'] = user.fkey.resource_path(r'images\eye1.png')
+        self.password_image['file'] = images+r'\eye1.png'
         self.show_password['command'] = self.password_show
 
     def to_clip(self, button):
@@ -331,17 +338,18 @@ class GUI:
         if code == '':
             return
         if blank is False:
-            self.infoFile = user.infoFile(code, filedialog.askopenfile(initialdir="/").name)
+            user.new_file(code, filedialog.askopenfile(initialdir="/").name)
         else:
-            self.infoFile = user.write_file(code, [['Site,Username,Password,Comments']])
+            user.write_file(code, [['Site,Username,Password,Comments']])
         self.activeCodeStrVar.set(code)      # Reset the global code to use the new code for files
         self.top.destroy()
         self.load_file()               # Reloads the file from the new code
 
     def load_backup(self):
         # Reload the backup in case of a mistake in the file.
-        self.infoFile = user.infoFile(self.activeCodeStrVar.get(), file=user.fkey.backupFile)
-        self.load_file()
+        print('Backup file found')
+        self.infoFile = user.InfoFile(self.activeCodeStrVar.get(), file=user.fkey.backupFile)
+        self.main_entries_page()
         self.update_entries(['', '', '', '', 'Backup File loaded', -1])
 
     # Code changing bugged, doesn't report invalid codes anymore
@@ -359,6 +367,7 @@ class GUI:
         self.code1StrVar.set('')
         self.code2StrVar.set('')
 
+    # Delete, Add and Update button status functions
     def url_button_status(self):
         # Scans the Comment string for 'http' and sets the open site to available if found
         if 'http' in self.URL_commentsStrVar.get():
@@ -371,6 +380,14 @@ class GUI:
         self.update_button.config(state='normal')
         self.add_button.config(state='normal')
 
+    def delete_button_status(self):
+        # Called on every update to the index variable to enable the delete button if credentials are loaded
+        if self.indexVar.get() < 0:
+            self.delete_button.config(state='disabled')
+        else:
+            self.delete_button.config(state='normal')
+
+    # Time out functions
     def focus_on_app(self):
         # Cancel timer when focus returns to app
         try:
