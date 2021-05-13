@@ -1,8 +1,9 @@
 # Private script to store the location of the credentials file as well as the location of the key file.
-# Generates keys from the pin
+# Generates keys from the code
 
 import os
 import sys
+import fkey
 from shutil import copyfile
 from cryptography.fernet import Fernet
 
@@ -10,11 +11,10 @@ from cryptography.fernet import Fernet
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS+'\\images'
+        # PyInstaller creates a temp folder and then runs script in _MEIPASS
+        base_path = sys._MEIPASS
     except Exception:
-        #base_path = os.path.abspath(".")+'\\images'
-        base_path = os.path.abspath(".")+'\\images'
+        base_path = mod_folder
     return os.path.join(base_path, relative_path)
 
 
@@ -25,17 +25,17 @@ def new_key():
         f.write(Fernet.generate_key()+Fernet.generate_key())
 
 
-def key(pin):
+def key(code):
     i = 0
-    chars = len(pin)
-    what = sum(bytes(pin, 'utf-8'))
+    chars = len(code)
+    what = sum(bytes(code, 'utf-8'))
     which = what % 10
     where = what % (44-chars)
     for file in os.listdir(keyLocation):
         fileName, ext = os.path.splitext(file)
         if len(fileName) == 44:
             if i == which:
-                val = bytes(fileName[:where]+pin+fileName[where+chars:], 'utf-8')
+                val = bytes(fileName[:where]+code+fileName[where+chars:], 'utf-8')
             i += 1
     if i == 10:
         return val
@@ -43,12 +43,12 @@ def key(pin):
         print('keys corrupted')
 
 
-def decrypt(pin, data):
-    return Fernet(key(pin)).decrypt(data)
+def decrypt(code, data):
+    return Fernet(key(code)).decrypt(data)
 
 
-def encrypt(pin, data):
-    return Fernet(key(pin)).encrypt(data)
+def encrypt(code, data):
+    return Fernet(key(code)).encrypt(data)
 
 
 def backup():
@@ -57,17 +57,20 @@ def backup():
             copyfile(baseFile, backupFile)
         except FileNotFoundError:
             pass
-try:
-    with open(r'C:\Users\usstwilk\PycharmProjects\Credentials\config.txt','r') as f:
-        info_folder = f.read()
-except FileNotFoundError:
-    info_folder = os.getcwd()
-keyLocation = resource_path('')
+
+mod_folder = os.path.dirname(fkey.__file__)
+
+keyLocation = resource_path('images') #needs to be maintained as the fkey location
+
+with open(mod_folder+r'\config.txt','r') as f:
+    info_folder = f.read()
+
 baseFile = info_folder + r'\info.txt'
 backupFile = info_folder + r'\info.bak'
 decodedFile = info_folder + r'\info_PLAIN_TEXT.txt'
 
 # Clean up decoded file from a previous run when fkey is imported.
 # The file is a long term liability in case the user forgets to delete it or doesn't know it was written.
+# Print plain text needs to be moved a GUI printout which isn't saved to the drive
 if os.path.isfile(decodedFile):
     os.remove(decodedFile)

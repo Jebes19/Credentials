@@ -3,130 +3,94 @@
 
 import fkey
 
-credsList = []
+
+class infoFile:
+
+    def __init__(self,code,file=fkey.baseFile):
+        # Instantiate a new file of credentials. If no file name is given the default encypted info.txt is expected.
+        # If a new filename is given, that will be read as plain text and will be encrypted to info.txt for later use
+        if file!=fkey.baseFile: # A new unencrypted file
+            with open(file, 'r') as f:
+                preList = [cred.replace('\t', '')               # Remove tabs from lines
+                        .split(',')[:4]                  # Split on commas and limit size to 4 items max
+                        for cred in f.read().split('\n')]    # Read lines and removes newlines
+                infoList = [group + [''] * (4 - len(group)) for group in preList]  # Expand size 4 items min
+                write_file(code, infoList, backup=True)
+                print('{} read and encoded'.format(fkey.baseFile))
+        with open(fkey.baseFile, 'rb') as f:
+            allCreds = fkey.decrypt(code, f.read()).decode().split('\n')
+            self.infoList = [cred.split(',') for cred in allCreds]
+            self.code = code
+        print("Credentials Loaded")
+
+        # Change the encryption key of the file.
+    def change_code(self, code1, code2):
+        if code1 != code2:
+            return "Codes don't match"
+        if len(code1) not in range(1, 44):
+            return 'Code of invalid length'
+        self.code = code1
+        write_file(code1, self.infoList, backup=False)
+        print('Code changed')
+
+    # Print out the entire encrypted credentials file to review
+    # Currently not used by InfoGUI
+    def print_creds(self, code=None):
+        print('\n')
+        for line in self.infoList:
+            print(line)
+        return 'Creds List printed'
+
+    def update_entry(self, new:[]):
+        # Takes the entries as newCreds and location as index. Overwrites all the values at that index
+        index = new[5]
+        self.infoList[index] = new[:4]
+        write_file(self.code, self.infoList, backup=False)
+        new[4] = 'Credentials updated'
+        return new
+
+    def delete_entry(self, index : int):
+        creds = self.infoList[index][0]
+        self.infoList.pop(index)
+        write_file(self.code,self.infoList, backup=True)
+        print(creds, 'deleted')
+        return ['', '', '', '', 'Credentials deleted', -1]
+
+    def add_entry(self, new : []):
+        if new is None:
+            new = [input('Site: '), input('Username: '), input('Password: '), input('Comments: ')]
+        if new in self.infoList:
+            return new + ['{} duplicated in file'.format(new[0]), -1]
+        self.infoList.append(new)
+        write_file(self.code, self.infoList, backup=False)
+        print(new[0] + ' added')
+        return new + ['Credentials added', len(self.infoList) - 1]
+
+def search_results(infoList : list, search : str):
+    # takes an infoList, searches it and returns a generator object to cycle through matches one at a time.
+    for i, line in enumerate(infoList):
+        if search.lower() in line[0].lower():
+            yield line+['Search again for next match', i]
 
 
-# Reading and writing the encrypted file
-def read_file(pin, file=fkey.baseFile):
-    if pin is None:
-        pin = input('Pin: ')
-    with open(file, 'rb') as f:
-        allCreds = fkey.decrypt(pin, f.read()).decode().split('\n')
-    if allCreds == ['']:
-        print('Empty File')
-        return
-    global credsList
-    credsList = [cred.split(',') for cred in allCreds]
-    print("Pin Accepted")
-
-
-# Encrypt and overwrite the current CredsList after it has been modified.
-def write_file(pin, backup=False, decoded='', blank=False):
-    all_items = credsList
-    if len(pin) not in range(1, 44):
-        return 'Pin of invalid length'
+def write_file(code, infoList : list, backup=False, decoded=''):
+    if len(code) not in range(1, 44):
+        return 'Code of invalid length'
     if backup is True:
         fkey.backup()
-    if blank is True:
-        all_items = [['Site,Username,Password,Comments']]
     if decoded == 'decoded':        # Write a decoded file
-        eCreds = '\n'.join([',\t\t'.join(entry) for entry in all_items])
+        eCreds = '\n'.join([',\t\t'.join(entry) for entry in infoList])
         fileType = 'w'
         file = fkey.decodedFile
     else:
-        eCreds = fkey.encrypt(pin, bytes('\n'.join([','.join(entry) for entry in all_items]), 'utf-8'))
+        eCreds = fkey.encrypt(code, bytes('\n'.join([','.join(entry) for entry in infoList]), 'utf-8'))
         fileType = 'wb'
         file = fkey.baseFile
     with open(file, fileType) as f:
         f.write(eCreds)
     print('File Written')
 
-
-# Change the encryption key of the file.
-def change_pin(pin1, pin2):
-    if pin1 != pin2:
-        return "Pins don't match"
-    if len(pin1) not in range(1, 44):
-        return 'Pin of invalid length'
-    write_file(pin1, backup=False)
-    print('Pin changed')
-
-
-def new_file(file, pin):
-    # Read a new unencrypted Credentials csv type file and encrypt it as the working file.
-    with open(file, 'r') as f:
-        preList = [cred.replace('\t', '')               # Remove tabs from lines
-                       .split(',')[:4]                  # Split on commas and limit size to 4 items max
-                   for cred in f.read().split('\n')]    # Read lines and removes newlines
-        global credsList
-        credsList = [group + [''] * (4 - len(group)) for group in preList]  # Expand size 4 items min
-        for site in credsList:      # Checks for duplicates
-            if len(list(log_in(site[0]))) > 1:
-                return '{} duplicated in file'.format(site[0])
-        write_file(pin, backup=True)
-    return '{} read and encoded'.format(fkey.baseFile)
-
-
-# Print out the entire encrypted credentials file to review
-# Currently not used by InfoGUI
-def print_creds(pin=None):
-    read_file(pin)
-    print('\n')
-    for line in credsList:
-        print(line)
-    return 'Creds List printed'
-
-
-# Methods for dealing with a single set of credentials.
-# Searches the credentials list and returns a single set of credentials which can be read or manipulated.
-
-
-def credentials(function, site, pin, new=None, index=-1, delete=None):
-    read_file(pin)
-    if function == 'login':
-        return log_in(site)
-    if function == 'add':
-        return add_entry(new, pin)
-    if function == 'update':
-        return update_entry(index, new, pin)
-    if function == 'delete':
-        return del_entry(index, delete, pin)
-
-
-def log_in(search):
-    for i, line in enumerate(credsList):
-        if search.lower() in line[0].lower():       # ignore case
-            yield line + ['Search again for next match', i]
-
-
-def update_entry(index, new, pin):
-    # Takes the entries as newCreds and location as index. Overwrites all the values at that index
-    credsList[index] = [new[i] for i, line in enumerate(credsList[index])]  # Line variable ignored
-    write_file(pin, backup=False)
-    return new + ['Credentials updated']
-
-
-def add_entry(new, pin):
-    if new is None:
-        new = [input('Site: '), input('Username: '), input('Password: '), input('Comments: ')]
-    if new in credsList:
-        return new + ['{} duplicated in file'.format(new[0]), -1]
-    credsList.append(new)
-    write_file(pin, backup=False)
-    print(new[0] + ' added')
-    return new + ['Credentials added', len(credsList) - 1]
-
-
-def del_entry(index, delete, pin):
-    if delete == 'DELETE':
-        creds = credsList[index]
-        credsList.pop(index)
-        write_file(pin, backup=True)
-        print(creds, ' deleted')
-        return ['', '', '', '', 'Credentials deleted', -1]
-
-
-
-
 if __name__ == "__main__":
+    #x = infoFile('77',r'C:\Users\usstwilk\Documents\Useful docs\info\Copy.txt')
+    search = search_results('77','jira')
     pass

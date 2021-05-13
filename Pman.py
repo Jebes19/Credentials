@@ -5,11 +5,10 @@ from tkinter import ttk, filedialog
 from threading import Timer
 from cryptography.fernet import InvalidToken
 from webbrowser import open as web_open
-
 import user
 
 
-VERSION = '1.7.6'
+VERSION = '1.7.7'
 
 
 # noinspection PyAttributeOutsideInit
@@ -25,27 +24,28 @@ class GUI:
 
         # Initialize all the variables
         self.timeOutIntVar = IntVar(value=600)    # 10 minute timeout
-        self.currentPinStrVar = StringVar()
+        self.indexVar = IntVar(value=-1)
+        self.activeCodeStrVar = StringVar()
         self.siteStrVar = StringVar(name='Site copied to clipboard')
         self.userStrVar = StringVar(name='User copied to clipboard')
         self.passwordStrVar = StringVar(name='Password copied to clipboard')
         self.URL_commentsStrVar = StringVar(name='URL')
         self.searchStrVar = StringVar()
-        self.pin1StrVar = StringVar()
-        self.pin2StrVar = StringVar()
+        self.code1StrVar = StringVar()
+        self.code2StrVar = StringVar()
         self.statusStrVar = StringVar('')
-        self.allMatchesIter = iter(())
+        self.infoFile = None
         self.lastVar = None
-        self.indexVar = None
+
 
         # Import images
-        self.copy_image = PhotoImage(file=user.fkey.resource_path('copy.png'), height=30, width=30)
-        self.settings_image = PhotoImage(file=user.fkey.resource_path('settings.png'), height=30, width=30)
-        self.open_image = PhotoImage(file=user.fkey.resource_path('open.png'), height=30, width=30)
-        self.password_image = PhotoImage(file=user.fkey.resource_path('eye2.png'), height=30, width=30)
-        self.new_file_image = PhotoImage(file=user.fkey.resource_path('new_file.png'), height=30, width=30)
-        self.load_file_image = PhotoImage(file=user.fkey.resource_path('load_file.png'), height=30, width=30)
-        self.main_menu_image = PhotoImage(file=user.fkey.resource_path('main_menu.png'), height=30, width=30)
+        self.copy_image = PhotoImage(file=user.fkey.resource_path(r'images\copy.png'), height=30, width=30)
+        self.settings_image = PhotoImage(file=user.fkey.resource_path(r'images\settings.png'), height=30, width=30)
+        self.open_image = PhotoImage(file=user.fkey.resource_path(r'images\open.png'), height=30, width=30)
+        self.password_image = PhotoImage(file=user.fkey.resource_path(r'images\eye2.png'), height=30, width=30)
+        self.new_file_image = PhotoImage(file=user.fkey.resource_path(r'images\new_file.png'), height=30, width=30)
+        self.load_file_image = PhotoImage(file=user.fkey.resource_path(r'images\load_file.png'), height=30, width=30)
+        self.main_menu_image = PhotoImage(file=user.fkey.resource_path(r'images\main_menu.png'), height=30, width=30)
 
         # Import standard window configuration
         self.build_page()
@@ -55,18 +55,18 @@ class GUI:
         ttk.Label(self.mainframe, text="Password Manager by Taylor Wilkin, Version " + VERSION)\
             .grid(column=1, row=10, columnspan=3, sticky=N)
 
-        # Pin Entry label.
-        ttk.Label(self.mainframe, text="PIN for Credentials file")\
+        # Code Entry label.
+        ttk.Label(self.mainframe, text="Code for Credentials file")\
             .grid(column=1, row=0, columnspan=2, sticky=N)
 
-        # Pin button and entry
-        self.pin_button = ttk.Button(self.mainframe, text='PIN', command=self.submit_pin)
-        self.pin_button.grid(column=1, row=1, sticky=E)
-        self.pin_entry = ttk.Entry(self.mainframe, width=15, textvariable=self.currentPinStrVar, show='*')
-        self.pin_entry.grid(column=2, row=1, sticky=W)
-        self.pin_entry.bind("<Return>", lambda event: self.submit_pin())
-        self.pin_entry.bind("<Button-1>", lambda event: self.currentPinStrVar.set(''))
-        self.pin_entry.focus()
+        # Code button and entry
+        self.code_button = ttk.Button(self.mainframe, text='Code', command=self.load_file)
+        self.code_button.grid(column=1, row=1, sticky=E)
+        self.code_entry = ttk.Entry(self.mainframe, width=15, textvariable=self.activeCodeStrVar, show='*')
+        self.code_entry.grid(column=2, row=1, sticky=W)
+        self.code_entry.bind("<Return>", lambda event: self.load_file())
+        self.code_entry.bind("<Button-1>", lambda event: self.activeCodeStrVar.set(''))
+        self.code_entry.focus()
 
         # New File Button
         ttk.Button(self.mainframe, text="New File", image=self.load_file_image, takefocus=0,
@@ -86,12 +86,12 @@ class GUI:
         # Search Entry
         search_entry = ttk.Entry(self.mainframe, width=30, textvariable=self.searchStrVar)
         search_entry.grid(column=2, row=0, sticky=W)
-        search_entry.bind("<Return>", lambda event: self.get_login(self.searchStrVar.get()))
+        search_entry.bind("<Return>", lambda event: self.get_next_login(self.searchStrVar.get()))
         search_entry.bind("<Button-1>", lambda event: self.searchStrVar.set(''))
         search_entry.focus()
         # Search Button
         ttk.Button(self.mainframe, text='Search',
-                   command=lambda: self.get_login(self.searchStrVar.get())) \
+                   command=lambda: self.get_next_login(self.searchStrVar.get())) \
             .grid(column=1, row=0, sticky=E)
         # Options Button
         ttk.Button(self.mainframe, text="Options", image=self.settings_image, takefocus=0,
@@ -137,23 +137,26 @@ class GUI:
                                     command=lambda: web_open(self.URL_commentsStrVar.get(), new=2))
         self.open_site.grid(column=0, row=8, sticky=E)
         # Add trace to URLComments variable to check for an valid website and update button status.
-        self.URL_commentsStrVar.trace('w', lambda a, b, c: self.url_button_status())
-        self.siteStrVar.trace('w', lambda a, b, c: self.update_button_status())
-        self.userStrVar.trace('w', lambda a, b, c: self.update_button_status())
+        self.URL_commentsStrVar.trace_add('write', lambda a, b, c: self.url_button_status())
+        # Add traces to entry variables to enable update and add buttons
+        self.siteStrVar.trace_add('write', lambda a, b, c: self.update_button_status())
+        self.userStrVar.trace_add('write', lambda a, b, c: self.update_button_status())
         self.passwordStrVar.trace_add('write', lambda a, b, c: self.update_button_status())
+        self.URL_commentsStrVar.trace_add('write', lambda a, b, c: self.update_button_status())
+        # Add Trace to index to enable delete button if index > 0
+        #self.indexVar.trace_add('write', lambda a, b, c: self.update_button_status())
         # Add, Update and Delete buttons
         self.delete_button = ttk.Button(self.mainframe, text="Delete",
                                    command=lambda: self.statusStrVar.set('Double click "Delete" to confirm'))
         self.delete_button.grid(column=1, row=9, sticky=W)
-        self.delete_button.bind('<Double-Button-1>', lambda event: self.change_entry('delete', self.siteStrVar))
+        self.delete_button.bind('<Double-Button-1>', lambda event: self.delete_entry())
         self.update_button = ttk.Button(self.mainframe, text="Update", state='disabled',
-                   command=lambda: self.change_entry('update', self.siteStrVar))
+                   command=lambda: self.update_or_add_entry())
         self.update_button.grid(column=2, row=9, sticky=W)
         self.add_button = ttk.Button(self.mainframe, text="Add", state='disabled',
-                   command=lambda: self.change_entry('add', self.siteStrVar))
+                   command=lambda: self.update_or_add_entry())
         self.add_button.grid(column=2, row=9, sticky=E)
 
-        self.mainframe.bind('<Key>', lambda event: self.update_button_status())
         self.padding()
 
     def options_page(self):
@@ -186,20 +189,20 @@ class GUI:
             .grid(column=1, row=1, columnspan=2, rowspan=1, sticky=NS)
         # Write all credentials
         ttk.Button(self.mainframe, text='Print plain text of all Credentials', width=50,
-                   command=lambda: [user.write_file(self.currentPinStrVar.get(), 'N', 'decoded'),
+                   command=lambda: [user.write_file(self.activeCodeStrVar.get(), self.infoFile.infoList, decoded='decoded'),
                                     web_open(user.fkey.info_folder, new=2)]) \
             .grid(column=1, row=3, columnspan=2, rowspan=2, sticky=NS)
-        # Change pin
-        ttk.Button(self.mainframe, text='Change Pin',
-                   command=self.pin_change, width=50) \
+        # Change code
+        ttk.Button(self.mainframe, text='Change Code',
+                   command=self.code_change, width=50) \
             .grid(column=1, row=5, columnspan=2, rowspan=2, sticky=NS)
 
-        # Change pin labels and entries
-        ttk.Label(self.mainframe, text="New Pin") \
+        # Change code labels and entries
+        ttk.Label(self.mainframe, text="New Code") \
             .grid(column=0, row=7, sticky=W)
-        ttk.Entry(self.mainframe, textvariable=self.pin1StrVar) \
+        ttk.Entry(self.mainframe, textvariable=self.code1StrVar) \
             .grid(column=0, row=7, columnspan=2, sticky=E)
-        ttk.Entry(self.mainframe, textvariable=self.pin2StrVar) \
+        ttk.Entry(self.mainframe, textvariable=self.code2StrVar) \
             .grid(column=2, row=7, columnspan=2, sticky=W)
 
         # Timeout checkbox
@@ -231,7 +234,7 @@ class GUI:
 
     def popup_select_new_file(self):
         top = self.top = Toplevel(root)
-        ttk.Label(top, text="PIN to encode New File").grid(row=0, column=0, columnspan=3)
+        ttk.Label(top, text="Code to encrypt New File").grid(row=0, column=0, columnspan=3)
         entry = Entry(top, justify='center')
         entry.grid(row=1, column=0, columnspan=3)
         entry.focus()
@@ -246,26 +249,26 @@ class GUI:
 
     # Methods to interact with the various entry boxes and buttons.
 
-    def submit_pin(self):
-        # Primarily checks the pin against the file but also reloads the credsList used by all the User methods
+    def load_file(self):
+        # Loads the list of credentials and stores the results to be manipulated
         try:
-            user.read_file(self.currentPinStrVar.get())
+            self.infoFile = user.infoFile(self.activeCodeStrVar.get())
+            self.statusStrVar.set('Ready to Search')
+            self.main_entries_page()
         except InvalidToken:
-            self.statusStrVar.set('Invalid PIN')
+            self.statusStrVar.set('Invalid Code')
             return
         except FileNotFoundError:
             self.statusStrVar.set('No File found')
             return
-        self.statusStrVar.set('Ready to Search')
-        self.main_entries_page()
 
-    def get_login(self, search):
-        # Takes search input and checks for a matched login. Returns a generator to retrieve all matches
+    def get_next_login(self, search):
+        # Takes search input and checks for matched logins. Returns a generator to retrieve all matches
         self.update_entries(['', '', '', '', self.statusStrVar.get()])    # Clears entries but not Status box
         if self.lastVar != search:        # New searches won't match the "last" search nor will end of list
-            self.allMatchesIter = user.credentials('login', search, self.currentPinStrVar.get())
+            self.allMatches = user.search_results(self.infoFile.infoList, search)
         try:
-            next_entry = next(self.allMatchesIter)
+            next_entry = next(self.allMatches)
         except StopIteration:               # End of list if no matches or no more matches
             if self.lastVar != search:
                 next_entry = ['', '', '', '', 'No matches found', -1]
@@ -274,7 +277,8 @@ class GUI:
             search = None                # Forces next search to start over
         self.lastVar = search             # If try succeeds, self.last will match search entry
         self.update_entries(next_entry)     # Successful search returns the list of strings
-        self.indexVar = next_entry[5]          # Stores list index for the currently displayed search results
+        self.indexVar.set(next_entry[5])         # Stores list index for the currently displayed search results
+
 
     def update_entries(self, credentials):
         # Update entries which can be empty to clear the boxes or will be the return from a search. Also, sets buttons
@@ -286,25 +290,34 @@ class GUI:
         self.update_button.config(state='disabled')
         self.add_button.config(state='disabled')
 
-    def change_entry(self, function, site):
-        # Use the existing entry values to add, edit or delete the credentials to or from the list.
-        site = site.get()
-        if site == '':
-            return None
-        new = [self.siteStrVar.get(), self.userStrVar.get(), self.passwordStrVar.get(), self.URL_commentsStrVar.get()]
-        changed = user.credentials(function, site, self.currentPinStrVar.get(), new, self.indexVar, 'DELETE')
-        self.update_entries(changed)    # Updates entries from the return of the previous call
+    def delete_entry(self):
+        # Updates entries from the return of the previous call
+        self.update_entries(self.infoFile.delete_entry(self.indexVar.get()))
+        self.indexVar.set(-1)
+
+    def update_or_add_entry(self):
+        new = [self.siteStrVar.get(),
+               self.userStrVar.get(),
+               self.passwordStrVar.get(),
+               self.URL_commentsStrVar.get(),
+               '',
+               self.indexVar.get()]
+        try:
+            self.update_entries(self.infoFile.update_entry(new))
+        except IndexError:
+            self.update_entries(self.infoFile.add_entry(new))
+        self.infoFile = user.infoFile(self.activeCodeStrVar.get())
 
     def password_show(self):
         # Show password, change image of button and remap command to password_hide
         self.password_entry['show'] = ''
-        self.password_image['file'] = user.fkey.resource_path('eye_closed.png')
+        self.password_image['file'] = user.fkey.resource_path(r'images\eye_closed.png')
         self.show_password['command'] = self.password_hide
 
     def password_hide(self):
         # Hide password, change image of button and remap command to password_show
         self.password_entry['show'] = '*'
-        self.password_image['file'] = user.fkey.resource_path('eye1.png')
+        self.password_image['file'] = user.fkey.resource_path(r'images\eye1.png')
         self.show_password['command'] = self.password_show
 
     def to_clip(self, button):
@@ -313,37 +326,38 @@ class GUI:
         root.clipboard_append(button.get())
         self.statusStrVar.set(button)
 
-    def load_new_file(self, entry, blank=False):
+    def load_new_file(self, code, blank=False):
         # Load all new credentials from a csv formatted file
-        if entry == '':
+        if code == '':
             return
         if blank is False:
-            user.new_file(filedialog.askopenfile(initialdir="/").name, entry)
+            self.infoFile = user.infoFile(code, filedialog.askopenfile(initialdir="/").name)
         else:
-            user.write_file(entry, blank=blank)
-        self.currentPinStrVar.set(entry)      # Reset the global pin to use the new pin for files
+            self.infoFile = user.write_file(code, [['Site,Username,Password,Comments']])
+        self.activeCodeStrVar.set(code)      # Reset the global code to use the new code for files
         self.top.destroy()
-        self.submit_pin()               # Reloads the file from the new pin
+        self.load_file()               # Reloads the file from the new code
 
     def load_backup(self):
         # Reload the backup in case of a mistake in the file.
-        user.read_file(self.currentPinStrVar.get(), user.fkey.backupFile)
-        self.submit_pin()
+        self.infoFile = user.infoFile(self.activeCodeStrVar.get(), file=user.fkey.backupFile)
+        self.load_file()
         self.update_entries(['', '', '', '', 'Backup File loaded', -1])
 
-    def pin_change(self):
-        # Compare pins entered and then encrypting the credsList with the new key
-        pin1 = self.pin1StrVar.get()
-        pin2 = self.pin2StrVar.get()
+    # Code changing bugged, doesn't report invalid codes anymore
+    def code_change(self):
+        # Compare codes entered and then encrypting the credsList with the new key
+        code1 = self.code1StrVar.get()
+        code2 = self.code2StrVar.get()
         try:
-            user.change_pin(pin1, pin2)
-            self.statusStrVar.set('PIN Changed')     # Changes pin if matched and valid pins
+            self.infoFile.change_code(code1, code2)
+            self.statusStrVar.set('Code Changed')     # Changes code if matched and valid codes
         except InvalidToken:
-            self.statusStrVar.set('Invalid PIN')
+            self.statusStrVar.set('Invalid Code')
             return
-        self.currentPinStrVar.set(pin1)
-        self.pin1StrVar.set('')
-        self.pin2StrVar.set('')
+        self.activeCodeStrVar.set(code1)
+        self.code1StrVar.set('')
+        self.code2StrVar.set('')
 
     def url_button_status(self):
         # Scans the Comment string for 'http' and sets the open site to available if found
