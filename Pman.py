@@ -8,7 +8,7 @@ from webbrowser import open as web_open
 import user
 
 
-VERSION = '1.7.7'
+VERSION = '2.1.1'
 
 
 # noinspection PyAttributeOutsideInit
