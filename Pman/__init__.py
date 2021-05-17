@@ -1,75 +1,70 @@
 from tkinter import *
 from tkinter import ttk, filedialog
-from tkinter import messagebox
 import os
-import shutil
 import configparser
+import pman_GUI
 
+config = configparser.ConfigParser()
 
-class config():
+class Config():
 
     def __init__(self, main):
         # Initialize the main window
         main.title("Password Manager First Time setup")
-        main.columnconfigure(0, weight=1, minsize=400)
-        main.rowconfigure(0, weight=1)
+        main.geometry('600x200')
 
-        # Initialize variables
         self.info_location = StringVar()
-        self.info_location.set(r'C:\Users\usstwilk\PycharmProjects\Credentials\pman\__init__.py')
-        self.build_page()
+        # Initialize config file variables
 
-        #ttk.Label(self.mainframe, text='Location to store encrypted file').grid(row=0, column=0, columnspan=2)
-        ttk.Label(self.mainframe, textvariable=self.info_location).grid(row=0, column=0)
-
-        #ttk.Button(self.mainframe, text='Set location', command=None).grid(row=1, column=1)
-        for child in self.mainframe.winfo_children():
-            child.grid_configure(padx=50, pady=5)
-
-
-    def config_file(self):
-        config = configparser.ConfigParser()
-
-        user_config_dir = os.path.expanduser("~") + "/.config/Pman"
-        user_config = user_config_dir + "/user_config.ini"
-
-        if not os.path.isfile(user_config):
-            os.makedirs(user_config_dir, exist_ok=True)
+        try:
+            self.info_location.set(config['section']['info_location'])
+        except KeyError:
             config.add_section('section')
-            config['section']['setting_1'] = "hello"
-            config['section']['setting_2'] = "goodbye"
-            with open("default_config.ini", 'w') as f:
-                config.write(f)
-                shutil.copyfile("default_config.ini", user_config)
-        else:
-            print('File found')
+            config['section']['info_location'] = "... Not currently set ... !!!"
+        self.info_location.set(config['section']['info_location'])
 
-        config.read(user_config)
-
-        print(config['section']['setting_1'])
-        print(config['section']['setting_2'])
+        # Build the main GUI frame
+        self.build_page()
+        ttk.Label(self.mainframe, text='Location to store encrypted file')\
+            .grid(row=0, column=1, columnspan=2)
+        ttk.Label(self.mainframe, textvariable=self.info_location)\
+            .grid(row=1, column=0, sticky=E, columnspan=3)
+        ttk.Button(self.mainframe, text='Set location', command=self.load_new_file)\
+            .grid(row=1, column=3, sticky=W)
+        ttk.Button(self.mainframe, text='Save', command=self.set_config)\
+            .grid(row=3, column=3, sticky=W)
+        for child in self.mainframe.winfo_children():
+            child.grid(padx=15, pady=5)
 
     def build_page(self):
-        self.mainframe = ttk.Frame(root, padding="3 3 12 12")
-        self.mainframe.pack()
-        self.mainframe.columnconfigure(0, weight=1, minsize=20)
-        self.mainframe.columnconfigure(1, weight=1, minsize=180)
-        self.mainframe.columnconfigure(2, weight=1, minsize=180)
-        self.mainframe.columnconfigure(3, weight=1, minsize=20)
-        self.mainframe.rowconfigure(10, weight=1, minsize=20)
+        self.mainframe = ttk.Frame(root, padding="8 8 20 20")
+        self.mainframe.grid()
+        self.mainframe.columnconfigure(0, weight=1, minsize=150)
+        self.mainframe.columnconfigure(1, weight=1, minsize=150)
+        self.mainframe.columnconfigure(2, weight=1, minsize=150)
+        self.mainframe.columnconfigure(3, weight=1, minsize=150)
 
-    def set_info_location(self):
-        res = messagebox.askquestion('askquestion', 'Do you like cats?')
-        if res == 'yes':
-            messagebox.showinfo('Response', 'You like Cats')
-        elif res == 'no':
-            messagebox.showinfo('Response', 'You must be a dog fan.')
-        else:
-            messagebox.showwarning('error', 'Something went wrong!')
+    def load_new_file(self):
+        self.info_location.set(filedialog.askdirectory(initialdir="/"))
+        config['section']['info_location'] = self.info_location.get()
 
+    def set_config(self):
+        with open(user_config, 'w') as f:
+            config.write(f)
+        root.destroy()
 
+# Define config folder in user/.config/Pman and file in folder as /user_config.ini
+user_config_dir = os.path.expanduser("~") + "/.config/Pman"
+user_config = user_config_dir + "/user_config.ini"
+config.read(user_config)
 
-root = Tk()
-config(root)
-root.mainloop()
+# If file does not exist, then launch the first time setup GUI to create the file.
+if not os.path.isfile(user_config):
+    os.makedirs(user_config_dir, exist_ok=True)
+    root = Tk()
+    Config(root)
+    root.mainloop()
+else:
+    print('Config File found')
+
 

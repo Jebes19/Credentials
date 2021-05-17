@@ -3,14 +3,15 @@
 
 import os
 import sys
-import fkey
 from shutil import copyfile
 from cryptography.fernet import Fernet
+import configparser
+config = configparser.ConfigParser()
 
 def new_key():
     # Writes a new key file to the working directory
     newKey = Fernet.generate_key()
-    with open(resource_path('') + newKey.decode() + '.txt', 'wb') as f:
+    with open(base_path + newKey.decode() + '.txt', 'wb') as f:
         f.write(Fernet.generate_key()+Fernet.generate_key())
 
 
@@ -52,13 +53,16 @@ try:
     base_path = sys._MEIPASS
     module_folder = os.getcwd()
 except Exception:
-    base_path = module_folder = os.path.dirname(fkey.__file__)
+    base_path = module_folder = os.path.dirname(__file__)
 
 keyLocation = base_path+r'\images' #needs to be maintained as the fkey location
 images = keyLocation
 
-with open(module_folder+r'\config.txt', 'r') as file:
-    info_folder = file.read()
+user_config_dir = os.path.expanduser("~") + "/.config/Pman"
+user_config = user_config_dir + "/user_config.ini"
+config.read(user_config)
+
+info_folder = config['section']['info_location']
 
 baseFile = info_folder + r'\info.txt'
 backupFile = info_folder + r'\info.bak'

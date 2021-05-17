@@ -5,11 +5,11 @@ from tkinter import ttk, filedialog
 from threading import Timer
 from cryptography.fernet import InvalidToken
 from webbrowser import open as web_open
-import user
+import user as user
 from fkey import images
 
 
-VERSION = '2.1.3'
+VERSION = '2.1.4'
 
 
 # noinspection PyAttributeOutsideInit
