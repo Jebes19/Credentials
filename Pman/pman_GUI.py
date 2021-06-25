@@ -5,11 +5,11 @@ from tkinter import ttk, filedialog
 from threading import Timer
 from cryptography.fernet import InvalidToken
 from webbrowser import open as web_open
-import user as user
-from fkey import images
+from pman import user
+from pman.fkey import images
 
 
-VERSION = '2.1.4'
+VERSION = '2.1.5'
 
 
 # noinspection PyAttributeOutsideInit
@@ -74,7 +74,7 @@ class GUI:
             .grid(column=0, row=0, rowspan=2, sticky=W)
 
         # New file label.
-        ttk.Label(self.mainframe, text="New File")\
+        ttk.Label(self.mainframe, text="Start New")\
             .grid(column=0, row=10, sticky=W)
 
         self.padding()
