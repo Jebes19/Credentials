@@ -1,7 +1,7 @@
 # Encrypts, decrypts and handles a file containing logins for a match to the user entered value for 'search'.
 # The search is returned as a generator so that the GUI can cycle through the matches.
 
-import pman.fkey as fkey
+from pman import fkey
 
 class InfoFile:
 
