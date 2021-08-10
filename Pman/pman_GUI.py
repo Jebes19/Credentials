@@ -9,7 +9,8 @@ from pman import user
 from pman.fkey import images
 
 
-VERSION = '2.1.5'
+VERSION = '2.1.6'
+
 
 
 # noinspection PyAttributeOutsideInit
@@ -145,8 +146,8 @@ class GUI:
         self.update_button = ttk.Button(self.mainframe, text="Update", state='disabled',
                                         command=lambda: self.update_or_add_entry())
         self.update_button.grid(column=2, row=9, sticky=W)
-        self.add_button = ttk.Button(self.mainframe, text="Add", state='disabled',
-                                     command=lambda: self.update_or_add_entry())
+        self.add_button = ttk.Button(self.mainframe, text="Add",
+                                     command=lambda: self.add_new_credentials())
         self.add_button.grid(column=2, row=9, sticky=E)
 
         # Variable Traces to change button states when variables change
@@ -270,7 +271,8 @@ class GUI:
 
     def get_next_login(self, search):
         # Takes search input and checks for matched logins. Returns a generator to retrieve all matches
-        self.update_entries(['', '', '', '', self.statusStrVar.get()])    # Clears entries but not Status box
+        # TODO delete if no problems found from not clearing entries
+        #  self.update_entry_boxes(['', '', '', '', self.statusStrVar.get()])    # Clears entries but not Status box
         if self.lastVar != search:        # New searches won't match the "last" search nor will end of list
             self.allMatches = user.search_results(self.infoFile.infoList, search)
         try:
@@ -282,25 +284,32 @@ class GUI:
                 next_entry = ['', '', '', '', 'End of matches', -1]
             search = None                # Forces next search to start over
         self.lastVar = search             # If try succeeds, self.last will match search entry
-        self.update_entries(next_entry)     # Successful search returns the list of strings
+        self.update_entry_boxes(next_entry)     # Successful search returns the list of strings
         self.indexVar.set(next_entry[5])         # Stores list index for the currently displayed search results
 
-    def update_entries(self, credentials):
-        # Update entries which can be empty to clear the boxes or will be the return from a search. Also, sets buttons
+    def update_entry_boxes(self, credentials):
+        # Update visible entry boxes on gui
+        # Updates can be to '' to clear the boxes or will otherwise be the return from a search.
+        # Also, update-entries sets update and add buttons to disabled
         self.siteStrVar.set(credentials[0])
         self.userStrVar.set(credentials[1])
         self.passwordStrVar.set(credentials[2])
         self.URL_commentsStrVar.set(credentials[3])
         self.statusStrVar.set(credentials[4])
         self.update_button.config(state='disabled')
-        self.add_button.config(state='disabled')
 
     def delete_entry(self, index):
         # Updates entries from the return of the previous call
         if index == -1:
             return
-        self.update_entries(self.infoFile.delete_entry(index))
-        self.indexVar.set(-1)
+        self.update_entry_boxes(self.infoFile.delete_entry(index))
+        self.indexVar.set(-1) # Remove any of the other current credentials from the targeted delete
+
+    def add_new_credentials(self):
+        # The add button clears the credentials and starts with blank entries
+        self.update_entry_boxes(['', '', '', '', 'Press Update when ready to add'])
+        self.indexVar.set(-1)   # Remove any of the current credentials from the targeted change
+        self.add_button.config(state='disabled')
 
     def update_or_add_entry(self):
         new = [self.siteStrVar.get(),
@@ -310,10 +319,13 @@ class GUI:
                '',
                self.indexVar.get()]
         try:
-            self.update_entries(self.infoFile.update_entry(new))
+            self.update_entry_boxes(self.infoFile.update_entry(new))
         except IndexError:
-            self.update_entries(self.infoFile.add_entry(new))
+            self.update_entry_boxes(self.infoFile.add_entry(new))
         self.infoFile = user.InfoFile(self.activeCodeStrVar.get())
+        self.add_button.config(state='enabled')
+        self.update_button.config(state='disabled')
+
 
     def password_show(self):
         # Show password, change image of button and remap command to password_hide
@@ -350,7 +362,7 @@ class GUI:
         print('Backup file found')
         self.infoFile = user.InfoFile(self.activeCodeStrVar.get(), file=user.fkey.backupFile)
         self.main_entries_page()
-        self.update_entries(['', '', '', '', 'Backup File loaded', -1])
+        self.update_entry_boxes(['', '', '', '', 'Backup File loaded', -1])
 
     # Code changing bugged, doesn't report invalid codes anymore
     def code_change(self):
