@@ -1,0 +1,22 @@
+/venv/
+/__pycache__/
+/.idea/
+/build/
+*.iml
+*.bat
+*.xml
+*.pyc
+*.txt
+*.bak
+*.ini
+*.exe
+*.spec
+Test.py
+
+/config.py
+/mypath.pth - Shortcut.lnk
+Installer/Pman_installer.nsi
+Installer/license.rtf
+dist/license.rtf
+dist/logo.ico
+dist/Pman_installer.nsi
