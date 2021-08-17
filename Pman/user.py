@@ -44,14 +44,14 @@ class InfoFile:
         self.infoList.pop(index)
         write_file(self.code, self.infoList, backup=True)
         print(creds, 'deleted')
-        return ['', '', '', '', 'Credentials deleted', -1]
+        return ['', '', '', '', 'Credentials deleted', len(self.infoList)]
 
     def add_entry(self, new: []):
         if new is None:
             new = [input('Site: '), input('Username: '), input('Password: '), input('Comments: ')]
         if new in self.infoList:
-            return new + ['{} duplicated in file'.format(new[0]), -1]
-        self.infoList.append(new)
+            return new + ['{} duplicated in file'.format(new[0]), len(self.infoList)]
+        self.infoList.append(new[:4])
         write_file(self.code, self.infoList, backup=False)
         print(new[0] + ' added')
         return new + ['Credentials added', len(self.infoList) - 1]

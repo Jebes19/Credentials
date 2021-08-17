@@ -9,7 +9,7 @@ from pman import user
 from pman.fkey import images
 
 
-VERSION = '2.1.6'
+VERSION = '2.1.7'
 
 
 
@@ -26,7 +26,7 @@ class GUI:
 
         # Initialize all the variables
         self.timeOutIntVar = IntVar(value=600)    # 10 minute timeout
-        self.indexVar = IntVar(value=-1)
+        self.indexVar = IntVar()
         self.activeCodeStrVar = StringVar()
         self.siteStrVar = StringVar(name='Site copied to clipboard')
         self.userStrVar = StringVar(name='User copied to clipboard')
@@ -140,9 +140,8 @@ class GUI:
 
         # Add, Update and Delete buttons
         self.delete_button = ttk.Button(self.mainframe, text="Delete", state="disabled",
-                                        command=lambda: self.statusStrVar.set('Double click "Delete" to confirm'))
+                            command=self.delete_button_set)
         self.delete_button.grid(column=1, row=9, sticky=W)
-        self.delete_button.bind('<Double-Button-1>', lambda event: self.delete_entry(self.indexVar.get()))
         self.update_button = ttk.Button(self.mainframe, text="Update", state='disabled',
                                         command=lambda: self.update_or_add_entry())
         self.update_button.grid(column=2, row=9, sticky=W)
@@ -271,17 +270,15 @@ class GUI:
 
     def get_next_login(self, search):
         # Takes search input and checks for matched logins. Returns a generator to retrieve all matches
-        # TODO delete if no problems found from not clearing entries
-        #  self.update_entry_boxes(['', '', '', '', self.statusStrVar.get()])    # Clears entries but not Status box
         if self.lastVar != search:        # New searches won't match the "last" search nor will end of list
             self.allMatches = user.search_results(self.infoFile.infoList, search)
         try:
             next_entry = next(self.allMatches)
         except StopIteration:               # End of list if no matches or no more matches
             if self.lastVar != search:
-                next_entry = ['', '', '', '', 'No matches found', -1]
+                next_entry = ['', '', '', '', 'No matches found', len(self.infoFile.infoList)]
             else:
-                next_entry = ['', '', '', '', 'End of matches', -1]
+                next_entry = ['', '', '', '', 'End of matches', len(self.infoFile.infoList)]
             search = None                # Forces next search to start over
         self.lastVar = search             # If try succeeds, self.last will match search entry
         self.update_entry_boxes(next_entry)     # Successful search returns the list of strings
@@ -298,17 +295,35 @@ class GUI:
         self.statusStrVar.set(credentials[4])
         self.update_button.config(state='disabled')
 
+    # Delete button Handling
     def delete_entry(self, index):
         # Updates entries from the return of the previous call
-        if index == -1:
+        if index == len(self.infoFile.infoList):
             return
         self.update_entry_boxes(self.infoFile.delete_entry(index))
-        self.indexVar.set(-1) # Remove any of the other current credentials from the targeted delete
+        self.indexVar.set(len(self.infoFile.infoList)) # Remove any of the other current credentials from the targeted delete
+        self.delete_button_reset()
 
+    def delete_button_status(self):
+        # Called on every update to the index variable to enable the delete button if credentials are loaded
+        if self.indexVar.get() < len(self.infoFile.infoList):
+            self.delete_button.config(state='normal')
+            self.delete_button_reset()
+        else:
+            self.delete_button.config(state='disabled')
+
+    def delete_button_set(self):
+        self.delete_button.bind('<Button-1>',lambda event: self.delete_entry(self.indexVar.get()))
+        self.statusStrVar.set('click "Delete" again to confirm')
+
+    def delete_button_reset(self):
+        self.delete_button.unbind('<Button-1>')
+
+    # Add Button handling
     def add_new_credentials(self):
         # The add button clears the credentials and starts with blank entries
         self.update_entry_boxes(['', '', '', '', 'Press Update when ready to add'])
-        self.indexVar.set(-1)   # Remove any of the current credentials from the targeted change
+        self.indexVar.set(len(self.infoFile.infoList))   # Remove any of the current credentials from the targeted change
         self.add_button.config(state='disabled')
 
     def update_or_add_entry(self):
@@ -362,7 +377,7 @@ class GUI:
         print('Backup file found')
         self.infoFile = user.InfoFile(self.activeCodeStrVar.get(), file=user.fkey.backupFile)
         self.main_entries_page()
-        self.update_entry_boxes(['', '', '', '', 'Backup File loaded', -1])
+        self.update_entry_boxes(['', '', '', '', 'Backup File loaded', len(self.infoFile.infoList)])
 
     # Code changing bugged, doesn't report invalid codes anymore
     def code_change(self):
@@ -391,13 +406,6 @@ class GUI:
         # Is called whenever a key stroke might change a data entry
         self.update_button.config(state='normal')
         self.add_button.config(state='normal')
-
-    def delete_button_status(self):
-        # Called on every update to the index variable to enable the delete button if credentials are loaded
-        if self.indexVar.get() < 0:
-            self.delete_button.config(state='disabled')
-        else:
-            self.delete_button.config(state='normal')
 
     # Time out functions
     def focus_on_app(self):
