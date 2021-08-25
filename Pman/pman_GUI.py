@@ -1,17 +1,14 @@
 # InterfaceGUI to interact with user.py
-
 from tkinter import *
 from tkinter import ttk, filedialog
 from threading import Timer
 from cryptography.fernet import InvalidToken
 from webbrowser import open as web_open
+from pman import pman_config
 from pman import user
 from pman.fkey import images
 
-
-VERSION = '2.1.8'
-
-
+VERSION = '2.1.9'
 
 # noinspection PyAttributeOutsideInit
 class GUI:

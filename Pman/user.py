@@ -93,6 +93,4 @@ def write_file(code, infolist: list, backup=False, decoded=''):
 
 
 if __name__ == "__main__":
-    x = InfoFile('77', r'C:\Users\usstwilk\Documents\Useful docs\info\Copy.txt')
-    y = search_results(x.infoList, 'jira')
     pass

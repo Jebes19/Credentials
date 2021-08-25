@@ -60,7 +60,7 @@ except Exception:
 keyLocation = base_path+r'\images' # keyLocation needs to be maintained as the fkey location
 images = keyLocation
 
-info_folder = this_config['section']['info_location']
+info_folder = this_config['locations']['info_location']
 baseFile = info_folder + r'\info.txt'
 backupFile = info_folder + r'\info.bak'
 decodedFile = info_folder + r'\info_PLAIN_TEXT.txt'
