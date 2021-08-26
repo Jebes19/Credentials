@@ -22,3 +22,4 @@ dist/logo.ico
 dist/Pman_installer.nsi
 /Distributable/license.rtf
 /Distributable/logo.ico
+/pman_config/pman_config.py

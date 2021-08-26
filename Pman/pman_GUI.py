@@ -7,6 +7,7 @@ from webbrowser import open as web_open
 from pman import pman_config
 from pman import user
 from pman.fkey import images
+from tkinter import messagebox
 
 VERSION = '2.1.9'
 
@@ -212,7 +213,7 @@ class GUI:
         self.timeout_button = ttk.Checkbutton(self.mainframe,
                                               text="1 hour timeout",
                                               variable=self.timeOutIntVar,
-                                              offvalue=300,
+                                              offvalue=600,
                                               onvalue=3600)
         self.timeout_button.grid(column=1, row=0, sticky=W)
 
@@ -406,20 +407,31 @@ class GUI:
 
     # Time out functions
     def focus_on_app(self):
+        print('focus_on_app')
         # Cancel timer when focus returns to app
         try:
             self.delay.cancel()
+            self.warning_timer.cancel()
         except AttributeError:
             pass
 
     def focus_from_app(self):
+        print('focus_from_app')
         # Start timer whenever focus moves from app
         self.delay = Timer(interval=self.timeOutIntVar.get(), function=self.timed_quit)
+        self.warning_timer = Timer(interval=self.timeOutIntVar.get()-30, function=self.warning_before_exit)
         self.delay.start()
+        self.warning_timer.start()
+
+    def warning_before_exit(self):
+        print('warning_before_exit')
+        messagebox.showinfo('Password Manager Timeout','Password Manager is about to timeout\n'
+                                                       'Press Ok to continue to use the application\n'
+                                                       'The timeout can be increased to 1 hour on the options page')
 
     def timed_quit(self):
+        print('timed_quit')
         # Quit program if timer expires.
-        root.focus_force()
         self.mainframe.destroy()
         ttk.Label(root, text='\tPassword Manager Logged out due to inactivity').grid(padx=15, pady=15, sticky=EW)
 
