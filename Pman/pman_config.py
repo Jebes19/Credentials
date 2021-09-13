@@ -1,14 +1,15 @@
 import os
 import configparser
-import sys
 config = configparser.ConfigParser()
 
-class Config():
+
+class Config:
 
     def __init__(self, main):
         # Initialize the main window
         main.title("Password Manager First Time setup")
         main.geometry('600x175')
+        self.mainframe = ttk.Frame(root, padding="8 8 20 20")
 
         # String displayed as the location of the info.txt
         self.info_location = StringVar()
@@ -22,7 +23,13 @@ class Config():
         self.info_location.set("... Credentials File directory is not currently set ... !!!")
 
         # Build the main GUI frame
-        self.build_page()
+        self.mainframe.grid()
+        self.mainframe.columnconfigure(0, weight=1, minsize=150)
+        self.mainframe.columnconfigure(1, weight=1, minsize=150)
+        self.mainframe.columnconfigure(2, weight=1, minsize=150)
+        self.mainframe.columnconfigure(3, weight=1, minsize=150)
+
+        # Add the Buttons and entries
         ttk.Label(self.mainframe, text='Location to store encrypted file')\
             .grid(row=0, column=1, columnspan=2)
         ttk.Label(self.mainframe, textvariable=self.info_location)\
@@ -33,14 +40,6 @@ class Config():
             .grid(row=3, column=2, sticky=W)
         for child in self.mainframe.winfo_children():
             child.grid(padx=15, pady=15)
-
-    def build_page(self):
-        self.mainframe = ttk.Frame(root, padding="8 8 20 20")
-        self.mainframe.grid()
-        self.mainframe.columnconfigure(0, weight=1, minsize=150)
-        self.mainframe.columnconfigure(1, weight=1, minsize=150)
-        self.mainframe.columnconfigure(2, weight=1, minsize=150)
-        self.mainframe.columnconfigure(3, weight=1, minsize=150)
 
     def load_new_file(self):
         config_directory = filedialog.askdirectory(initialdir="/")
@@ -63,7 +62,7 @@ def on_closing():
 
 
 # Look for the config file in the user's config directory
-user_config_dir = os.path.expanduser("~") + "\.config\Pman"
+user_config_dir = os.path.expanduser("~") + r"\.config\Pman"
 user_config = user_config_dir + r"\user_config.ini"
 
 # If config file can't be read or is corrupt, then launch the first time setup GUI to create the file.
