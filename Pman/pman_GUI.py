@@ -8,8 +8,11 @@ from pman import pman_config
 from pman import user
 from pman.fkey import images
 from tkinter import messagebox
+import os
+import sys
 
-VERSION = '2.1.10'
+VERSION = '2.1.11'
+
 
 # noinspection PyAttributeOutsideInit
 class GUI:
@@ -23,7 +26,7 @@ class GUI:
         main.rowconfigure(0, weight=1)
 
         # Initialize all the variables
-        self.timeOutIntVar = IntVar(value=600)    # 10 minute timeout
+        self.timeOutIntVar = IntVar(value=6)    # 10 minute timeout
         self.indexVar = IntVar()
         self.activeCodeStrVar = StringVar()
         self.siteStrVar = StringVar(name='Site copied to clipboard')
@@ -299,7 +302,7 @@ class GUI:
         if index == len(self.infoFile.infoList):
             return
         self.update_entry_boxes(self.infoFile.delete_entry(index))
-        self.indexVar.set(len(self.infoFile.infoList)) # Remove any of the other current credentials from the targeted delete
+        self.indexVar.set(len(self.infoFile.infoList))      # Set current index to end of the list
         self.delete_button_reset()
 
     def delete_button_status(self):
@@ -338,7 +341,6 @@ class GUI:
         self.infoFile = user.InfoFile(self.activeCodeStrVar.get())
         self.add_button.config(state='enabled')
         self.update_button.config(state='disabled')
-
 
     def password_show(self):
         # Show password, change image of button and remap command to password_hide
@@ -419,15 +421,16 @@ class GUI:
         print('focus_from_app')
         # Start timer whenever focus moves from app
         self.delay = Timer(interval=self.timeOutIntVar.get(), function=self.timed_quit)
-        self.warning_timer = Timer(interval=self.timeOutIntVar.get()-30, function=self.warning_before_exit)
+        self.warning_timer = Timer(interval=self.timeOutIntVar.get()-3, function=self.warning_before_exit)
         self.delay.start()
         self.warning_timer.start()
 
     def warning_before_exit(self):
         print('warning_before_exit')
-        messagebox.showinfo('Password Manager Timeout','Password Manager is about to timeout\n'
-                                                       'Press Ok to continue to use the application\n'
-                                                       'The timeout can be increased to 1 hour on the options page')
+        messagebox.showinfo('Password Manager Timeout', 'Password Manager is about to timeout (or has already)\n'
+                                        'Press Ok to continue to use the application\n'
+                                        'Note: The timeout can be temporarily increased to 1 hour on the options page')
+
 
     def timed_quit(self):
         print('timed_quit')
