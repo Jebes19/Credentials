@@ -9,7 +9,7 @@ from pman import user
 from pman.fkey import images
 from tkinter import messagebox
 
-VERSION = '2.1.9'
+VERSION = '2.1.10'
 
 # noinspection PyAttributeOutsideInit
 class GUI:
@@ -363,7 +363,7 @@ class GUI:
         if code == '':
             return
         if blank is False:
-            user.new_file(code, filedialog.askopenfile(initialdir="/").name)
+            user.new_file(code, filedialog.askopenfile(initialdir=user.fkey.info_folder).name)
         else:
             user.write_file(code, [['Site,Username,Password,Comments']])
         self.activeCodeStrVar.set(code)      # Reset the global code to use the new code for files

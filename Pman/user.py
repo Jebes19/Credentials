@@ -71,7 +71,8 @@ def new_file(code, file):
                    for cred in f.read().split('\n')]    # Read lines and removes newlines
         infoList = [group + [''] * (4 - len(group)) for group in preList]  # Expand size 4 items min
         write_file(code, infoList, backup=True)
-        print('{} read and encoded'.format(fkey.baseFile))
+        print('{} written and encoded'.format(fkey.baseFile))
+        print('Key used: ',code)
 
 
 def write_file(code, infolist: list, backup=False, decoded=''):

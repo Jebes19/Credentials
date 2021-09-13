@@ -1,29 +1,47 @@
 # Private script to store the location of the credentials file as well as the location of the key file.
 # Generates keys from the code
 
+import base64
 import os
 import sys
-from shutil import copyfile
-from cryptography.fernet import Fernet
 import configparser
+from shutil import copyfile
+
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
 
 def new_key():
     # Writes a new key file to the working directory
+    # This should probably be encorporated with the setup function
     newKey = Fernet.generate_key()
     with open(base_path + newKey.decode() + '.txt', 'wb') as f:
         f.write(Fernet.generate_key()+Fernet.generate_key())
 
-def key(code):
+def key(password):
+    # Takes the password given and returns the hash
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salter(password),
+        iterations=100000,
+        )
+    key = base64.urlsafe_b64encode(kdf.derive(bytes(password,'utf-8')))
+    return(key)
+
+def salter(hash):
+    # Takes a code and returns a string of bytes 44 characters long which is used as the key for the info file
     i = 0
-    chars = len(code)
-    what = sum(bytes(code, 'utf-8'))
+    chars = len(hash)
+    what = sum(bytes(hash, 'utf-8'))
     which = what % 10
     where = what % (44-chars)
     for file in os.listdir(keyLocation):
         fileName, ext = os.path.splitext(file)
         if len(fileName) == 44:
             if i == which:
-                val = bytes(fileName[:where]+code+fileName[where+chars:], 'utf-8')
+                val = bytes(fileName[:where]+hash+fileName[where+chars:], 'utf-8')
             i += 1
     if i == 10:
         return val
