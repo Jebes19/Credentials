@@ -26,7 +26,7 @@ class GUI:
         main.rowconfigure(0, weight=1)
 
         # Initialize all the variables
-        self.timeOutIntVar = IntVar(value=6)    # 10 minute timeout
+        self.timeOutIntVar = IntVar(value=600)    # 10 minute timeout
         self.indexVar = IntVar()
         self.activeCodeStrVar = StringVar()
         self.siteStrVar = StringVar(name='Site copied to clipboard')
@@ -421,7 +421,7 @@ class GUI:
         print('focus_from_app')
         # Start timer whenever focus moves from app
         self.delay = Timer(interval=self.timeOutIntVar.get(), function=self.timed_quit)
-        self.warning_timer = Timer(interval=self.timeOutIntVar.get()-3, function=self.warning_before_exit)
+        self.warning_timer = Timer(interval=self.timeOutIntVar.get()-30, function=self.warning_before_exit)
         self.delay.start()
         self.warning_timer.start()
 
