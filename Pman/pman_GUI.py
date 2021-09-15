@@ -8,10 +8,8 @@ from pman import pman_config
 from pman import user
 from pman.fkey import images
 from tkinter import messagebox
-import os
-import sys
 
-VERSION = '2.1.11'
+VERSION = '2.1.12'
 
 
 # noinspection PyAttributeOutsideInit
@@ -384,12 +382,8 @@ class GUI:
         # Compare codes entered and then encrypting the credsList with the new key
         code1 = self.code1StrVar.get()
         code2 = self.code2StrVar.get()
-        try:
-            self.infoFile.change_code(code1, code2)
-            self.statusStrVar.set('Code Changed')     # Changes code if matched and valid codes
-        except InvalidToken:
-            self.statusStrVar.set('Invalid Code')
-            return
+        self.statusStrVar.set(self.infoFile.change_code(code1, code2))     # Changes code if matched and valid codes
+
         self.activeCodeStrVar.set(code1)
         self.code1StrVar.set('')
         self.code2StrVar.set('')
