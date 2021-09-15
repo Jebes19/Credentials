@@ -21,7 +21,7 @@ class InfoFile:
             return 'Code of invalid length'
         self.code = code1
         write_file(code1, self.infoList, backup=False)
-        print('Code changed')
+        return 'Code changed'
 
     # Print out the entire encrypted credentials file to review
     # Currently not used by InfoGUI
@@ -72,7 +72,6 @@ def new_file(code, file):
         infoList = [group + [''] * (4 - len(group)) for group in preList]  # Expand size 4 items min
         write_file(code, infoList, backup=True)
         print('{} written and encoded'.format(fkey.baseFile))
-        print('Key used: ',code)
 
 
 def write_file(code, infolist: list, backup=False, decoded=''):

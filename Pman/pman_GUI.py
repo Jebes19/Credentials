@@ -1,6 +1,8 @@
 # InterfaceGUI to interact with user.py
+import tkinter as tk
 from tkinter import *
 from tkinter import ttk, filedialog
+import tkinter.scrolledtext as scrolledtext
 from threading import Timer
 from cryptography.fernet import InvalidToken
 from webbrowser import open as web_open
@@ -9,7 +11,7 @@ from pman import user
 from pman.fkey import images
 from tkinter import messagebox
 
-VERSION = '2.1.12'
+VERSION = '2.1.13'
 
 
 # noinspection PyAttributeOutsideInit
@@ -189,14 +191,18 @@ class GUI:
         ttk.Button(self.mainframe, text='Load Backup File', width=50,
                    command=self.load_backup) \
             .grid(column=1, row=1, columnspan=2, rowspan=1, sticky=NS)
+        # Show all credentials
+        ttk.Button(self.mainframe, text='Show all credentials in the list', width=50,
+                   command=lambda: self.popup_show_credentials())\
+            .grid(column=1, row=3, columnspan=2, rowspan=1, sticky=NS)
         # Write all credentials
-        ttk.Button(self.mainframe, text='Print plain text of all Credentials', width=50,
+        ttk.Button(self.mainframe, text='Write all Credentials to a file', width=50,
                    command=lambda: [user.write_file(self.activeCodeStrVar.get(),
                                     self.infoFile.infoList,
                                     decoded='decoded'),
                                     web_open(user.fkey.info_folder,
                                     new=2)]) \
-            .grid(column=1, row=3, columnspan=2, rowspan=2, sticky=NS)
+            .grid(column=1, row=4, columnspan=2, rowspan=1, sticky=NS)
         # Change code
         ttk.Button(self.mainframe, text='Change Code',
                    command=self.code_change, width=50) \
@@ -247,12 +253,22 @@ class GUI:
                    command=lambda: self.load_new_file(entry.get(), blank=True)).grid(row=3, column=0)
         ttk.Button(top, text='Load File', image=self.load_file_image,
                    command=lambda: self.load_new_file(entry.get())).grid(row=3, column=2)
-        ttk.Label(top, text='Start with a new File').grid(row=2, column=0)
-        ttk.Label(top, text='Load an existing File').grid(row=2, column=2)
+        ttk.Label(top, text='Start a new blank list').grid(row=2, column=0)
+        ttk.Label(top, text='Load an existing list').grid(row=2, column=2)
         for child in top.winfo_children():
             child.grid_configure(padx=15, pady=10)
 
-    # Methods to interact with the various entry boxes and buttons.
+    def popup_show_credentials(self):
+        printed_list = '\n\n'.join(str(e) for e in self.infoFile.infoList)
+        top = self.top = Toplevel(root)
+        txt = scrolledtext.ScrolledText(top, undo=True)
+        txt['font'] = ('consolas', '10')
+        txt.pack(expand=True, fill='both')
+        txt.insert(tk.END, printed_list)
+        for child in top.winfo_children():
+            child.grid_configure(padx=15, pady=10)
+
+    # Methods to interact with the various entry boxes and buttons.d
 
     def load_file(self):
         # Loads the list of credentials and stores the results to be manipulated
@@ -372,19 +388,17 @@ class GUI:
 
     def load_backup(self):
         # Reload the backup in case of a mistake in the file.
-        print('Backup file found')
         self.infoFile = user.InfoFile(self.activeCodeStrVar.get(), file=user.fkey.backupFile)
         self.main_entries_page()
         self.update_entry_boxes(['', '', '', '', 'Backup File loaded', len(self.infoFile.infoList)])
 
-    # Code changing bugged, doesn't report invalid codes anymore
     def code_change(self):
         # Compare codes entered and then encrypting the credsList with the new key
         code1 = self.code1StrVar.get()
         code2 = self.code2StrVar.get()
         self.statusStrVar.set(self.infoFile.change_code(code1, code2))     # Changes code if matched and valid codes
-
         self.activeCodeStrVar.set(code1)
+        # Blank out the password lines
         self.code1StrVar.set('')
         self.code2StrVar.set('')
 
@@ -424,7 +438,6 @@ class GUI:
         messagebox.showinfo('Password Manager Timeout', 'Password Manager is about to timeout (or has already)\n'
                                         'Press Ok to continue to use the application\n'
                                         'Note: The timeout can be temporarily increased to 1 hour on the options page')
-
 
     def timed_quit(self):
         print('timed_quit')
