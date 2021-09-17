@@ -11,7 +11,7 @@ from pman import user
 from pman.fkey import images
 from tkinter import messagebox
 
-VERSION = '2.1.13'
+VERSION = '2.1.14'
 
 
 # noinspection PyAttributeOutsideInit
@@ -141,7 +141,7 @@ class GUI:
 
         # Add, Update and Delete buttons
         self.delete_button = ttk.Button(self.mainframe, text="Delete", state="disabled",
-                            command=self.delete_button_set)
+                                        command=self.delete_button_set)
         self.delete_button.grid(column=1, row=9, sticky=W)
         self.update_button = ttk.Button(self.mainframe, text="Update", state='disabled',
                                         command=lambda: self.update_or_add_entry())
@@ -259,12 +259,15 @@ class GUI:
             child.grid_configure(padx=15, pady=10)
 
     def popup_show_credentials(self):
-        printed_list = '\n\n'.join(str(e) for e in self.infoFile.infoList)
+        printed_list = '\n'.join(str(',\t\t\t'.join(e)) for e in self.infoFile.infoList)
         top = self.top = Toplevel(root)
-        txt = scrolledtext.ScrolledText(top, undo=True)
-        txt['font'] = ('consolas', '10')
-        txt.pack(expand=True, fill='both')
+        txt = scrolledtext.ScrolledText(top, undo=True,
+                                        # Width set to the size of the largest string in the list + 40 for tabs added
+                                        width=40+len(max((''.join(e) for e in self.infoFile.infoList),key=len)))
+        txt['font'] = ('arial', '10')
         txt.insert(tk.END, printed_list)
+        txt.pack(expand=True, fill="both")
+        ttk.Button(top, text='Save Changes', command=None)
         for child in top.winfo_children():
             child.grid_configure(padx=15, pady=10)
 
@@ -328,7 +331,7 @@ class GUI:
             self.delete_button.config(state='disabled')
 
     def delete_button_set(self):
-        self.delete_button.bind('<Button-1>',lambda event: self.delete_entry(self.indexVar.get()))
+        self.delete_button.bind('<Button-1>', lambda event: self.delete_entry(self.indexVar.get()))
         self.statusStrVar.set('click "Delete" again to confirm')
 
     def delete_button_reset(self):
@@ -338,7 +341,7 @@ class GUI:
     def add_new_credentials(self):
         # The add button clears the credentials and starts with blank entries
         self.update_entry_boxes(['', '', '', '', 'Press Update when ready to add'])
-        self.indexVar.set(len(self.infoFile.infoList))   # Remove any of the current credentials from the targeted change
+        self.indexVar.set(len(self.infoFile.infoList))   # Redirect the active set of credentials to the end of the list
         self.add_button.config(state='disabled')
 
     def update_or_add_entry(self):
@@ -429,21 +432,22 @@ class GUI:
         print('focus_from_app')
         # Start timer whenever focus moves from app
         self.delay = Timer(interval=self.timeOutIntVar.get(), function=self.timed_quit)
-        self.warning_timer = Timer(interval=self.timeOutIntVar.get()-30, function=self.warning_before_exit)
+        self.warning_timer = Timer(interval=self.timeOutIntVar.get()-30, function=warning_before_exit)
         self.delay.start()
         self.warning_timer.start()
-
-    def warning_before_exit(self):
-        print('warning_before_exit')
-        messagebox.showinfo('Password Manager Timeout', 'Password Manager is about to timeout (or has already)\n'
-                                        'Press Ok to continue to use the application\n'
-                                        'Note: The timeout can be temporarily increased to 1 hour on the options page')
 
     def timed_quit(self):
         print('timed_quit')
         # Quit program if timer expires.
         self.mainframe.destroy()
         ttk.Label(root, text='\tPassword Manager Logged out due to inactivity').grid(padx=15, pady=15, sticky=EW)
+
+
+def warning_before_exit():
+    print('warning_before_exit')
+    messagebox.showinfo('Password Manager Timeout', 'Password Manager is about to timeout (or has already)\n'
+                        'Press Ok to continue to use the application\n'
+                        'Note: The timeout can be temporarily increased to 1 hour on the options page')
 
 
 root = Tk()
