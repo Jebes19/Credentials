@@ -11,7 +11,7 @@ from pman import user
 from pman.fkey import images
 from tkinter import messagebox
 
-VERSION = '2.1.14'
+VERSION = '2.1.15'
 
 
 # noinspection PyAttributeOutsideInit
