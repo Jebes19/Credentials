@@ -36,10 +36,11 @@ class GUI:
         self.searchStrVar = StringVar()
         self.code1StrVar = StringVar()
         self.code2StrVar = StringVar()
-        self.statusStrVar = StringVar('')
+        self.statusStrVar = StringVar()
         self.infoFile = None
-        self.lastVar = None
-
+        self.lastSearch = None
+        self.matchIndex = 0
+        
         # Import images
         self.copy_image = PhotoImage(file=images+r'\copy.png', height=30, width=30)
         self.settings_image = PhotoImage(file=images+r'\settings.png', height=30, width=30)
@@ -105,36 +106,36 @@ class GUI:
         self.status_label.grid(column=2, row=1, sticky=W)
         # Site label, button, and entry
         ttk.Label(self.mainframe, text="Site", ) \
-            .grid(column=1, row=1, columnspan=2, sticky=(W, S))
+            .grid(column=1, row=1, columnspan=2, sticky=SW)
         ttk.Button(self.mainframe, image=self.copy_image, takefocus=0,
                    command=lambda: self.to_clip(self.siteStrVar)) \
             .grid(column=3, row=2, sticky=W)
         ttk.Entry(self.mainframe, textvariable=self.siteStrVar) \
-            .grid(column=1, row=2, columnspan=2, sticky=(W, E))
+            .grid(column=1, row=2, columnspan=2, sticky=EW)
         # Username label, button, and entry
         ttk.Label(self.mainframe, text="Username") \
-            .grid(column=1, row=3, sticky=(W, S))
+            .grid(column=1, row=3, sticky=SW)
         ttk.Entry(self.mainframe, textvariable=self.userStrVar) \
-            .grid(column=1, row=4, columnspan=2, sticky=(W, E))
+            .grid(column=1, row=4, columnspan=2, sticky=EW)
         ttk.Button(self.mainframe, image=self.copy_image, takefocus=0,
                    command=lambda: self.to_clip(self.userStrVar)) \
             .grid(column=3, row=4, sticky=W)
         # Password label, button, entry, and show password button
         ttk.Label(self.mainframe, text="Password") \
-            .grid(column=1, row=5, sticky=(W, S))
+            .grid(column=1, row=5, sticky=SW)
         ttk.Button(self.mainframe, image=self.copy_image, takefocus=0,
                    command=lambda: self.to_clip(self.passwordStrVar)) \
             .grid(column=3, row=6, sticky=W)
         self.password_entry = ttk.Entry(self.mainframe, textvariable=self.passwordStrVar, show="*")
-        self.password_entry.grid(column=1, row=6, columnspan=2, sticky=(W, E))
+        self.password_entry.grid(column=1, row=6, columnspan=2, sticky=EW)
         self.show_password = ttk.Button(self.mainframe, takefocus=0, image=self.password_image,
                                         command=self.password_show)
         self.show_password.grid(column=0, row=6, sticky=W)
         # Comments label, entry, and open site button
         ttk.Label(self.mainframe, text="URL or Comments") \
-            .grid(column=1, columnspan=2, row=7, sticky=(W, S))
+            .grid(column=1, columnspan=2, row=7, sticky=SW)
         ttk.Entry(self.mainframe, textvariable=self.URL_commentsStrVar) \
-            .grid(column=1, row=8, columnspan=2, sticky=(W, E))
+            .grid(column=1, row=8, columnspan=2, sticky=EW)
         self.open_site = ttk.Button(self.mainframe, image=self.open_image, takefocus=0, state='disabled',
                                     command=lambda: web_open(self.URL_commentsStrVar.get(), new=2))
         self.open_site.grid(column=0, row=8, sticky=E)
@@ -151,10 +152,10 @@ class GUI:
         self.add_button.grid(column=2, row=9, sticky=E)
 
         # Variable Traces to change button states when variables change
-        # Add trace to URLComments variable to check for an valid website and update button status.
+        # Add trace to URLComments variable to check for a valid website and update button status.
         self.URL_commentsStrVar.trace_add('write', lambda a, b, c: self.url_button_status())
         # Add traces to entry variables to enable update and add buttons
-        self.siteStrVar.trace_add('write', lambda a, b, c: self.update_button_status())
+        self.siteStrVar.trace_add('write', lambda a, b, c: (self.update_button_status(), self.add_button_status()))
         self.userStrVar.trace_add('write', lambda a, b, c: self.update_button_status())
         self.passwordStrVar.trace_add('write', lambda a, b, c: self.update_button_status())
         self.URL_commentsStrVar.trace_add('write', lambda a, b, c: self.update_button_status())
@@ -286,21 +287,44 @@ class GUI:
             self.statusStrVar.set('No File found')
             return
 
+    # Deprecate after further testing
+    # def get_next_login_old(self, search):
+    #     # Takes search input and checks for matched logins. Returns a generator to retrieve all matches
+    #     if self.lastSearch != search:        # New searches won't match the "last" search nor will end of list
+    #         self.allMatches = user.search_results(self.infoFile.infoList, search)
+    #     try:
+    #         next_entry = next(self.allMatches)
+    #     except StopIteration:               # End of list if no matches or no more matches
+    #         if self.lastSearch != search:
+    #             next_entry = ['', '', '', '', 'No matches found', len(self.infoFile.infoList)]
+    #         else:
+    #             next_entry = ['', '', '', '', 'End of matches', len(self.infoFile.infoList)]
+    #         search = None                # Forces next search to start over
+    #     self.lastSearch = search             # If try succeeds, self.last will match search entry
+    #     self.update_entry_boxes(next_entry)     # Successful search returns the list of strings
+    #     self.indexVar.set(next_entry[5])         # Stores list index for the currently displayed search results
+
     def get_next_login(self, search):
-        # Takes search input and checks for matched logins. Returns a generator to retrieve all matches
-        if self.lastVar != search:        # New searches won't match the "last" search nor will end of list
+        # Takes search input and checks for matched logins. Returns a list of matches to retrieve all matches
+        # New Search (Or end of list)
+        if self.lastSearch != search:        # New searches won't match the "last" search nor will end of list
             self.allMatches = user.search_results(self.infoFile.infoList, search)
-        try:
-            next_entry = next(self.allMatches)
-        except StopIteration:               # End of list if no matches or no more matches
-            if self.lastVar != search:
-                next_entry = ['', '', '', '', 'No matches found', len(self.infoFile.infoList)]
+            self.matchIndex = 0
+        else:
+            self.matchIndex += 1
+        # End of list if no matches or no more matches
+        if len(self.allMatches) == self.matchIndex:
+            # EOL at matchIndex 0 means there are no matches
+            if self.matchIndex == 0:
+                current_match = ['', '', '', '', 'No matches found', len(self.infoFile.infoList)]
             else:
-                next_entry = ['', '', '', '', 'End of matches', len(self.infoFile.infoList)]
+                current_match = ['', '', '', '', 'End of matches', len(self.infoFile.infoList)]
             search = None                # Forces next search to start over
-        self.lastVar = search             # If try succeeds, self.last will match search entry
-        self.update_entry_boxes(next_entry)     # Successful search returns the list of strings
-        self.indexVar.set(next_entry[5])         # Stores list index for the currently displayed search results
+        else:
+            current_match = self.allMatches[self.matchIndex]
+        self.lastSearch = search             # If try succeeds, self.last will match search entry
+        self.update_entry_boxes(current_match)     # Successful search returns the list of strings
+        self.indexVar.set(current_match[5])         # Stores list index for the currently displayed search results
 
     def update_entry_boxes(self, credentials):
         # Update visible entry boxes on gui
@@ -310,8 +334,12 @@ class GUI:
         self.userStrVar.set(credentials[1])
         self.passwordStrVar.set(credentials[2])
         self.URL_commentsStrVar.set(credentials[3])
-        self.statusStrVar.set(credentials[4])
+        self.statusStrVar.set(credentials[4]+' '+str(credentials[5]))
         self.update_button.config(state='disabled')
+        # Reset the button confid on the add button if an add was cancelled.
+        self.add_button.config(command=lambda: self.add_new_credentials())
+
+        
 
     # Delete button Handling
     def delete_entry(self, index):
@@ -340,9 +368,20 @@ class GUI:
     # Add Button handling
     def add_new_credentials(self):
         # The add button clears the credentials and starts with blank entries
-        self.update_entry_boxes(['', '', '', '', 'Press Update when ready to add'])
-        self.indexVar.set(len(self.infoFile.infoList))   # Redirect the active set of credentials to the end of the list
-        self.add_button.config(state='disabled')
+        EOL = len(self.infoFile.infoList)
+        site = self.siteStrVar.get()
+        self.update_entry_boxes([site, '', '', '', 'Press add again when ready to add',EOL])
+        self.indexVar.set(EOL)   # Redirect the active set of credentials to the end of the list
+        self.add_button.config(command=lambda: self.add_confirm(site, EOL))
+
+    def add_confirm(self, site, EOL):
+        EOL = len(self.infoFile.infoList)
+        site = self.siteStrVar.get()
+        if site == '':
+            self.update_entry_boxes([site, '', '', '', 'Add a site name', EOL])
+        else:
+            self.add_button.config(command=lambda: self.add_new_credentials())
+            self.update_or_add_entry()
 
     def update_or_add_entry(self):
         new = [self.siteStrVar.get(),
@@ -356,7 +395,7 @@ class GUI:
         except IndexError:
             self.update_entry_boxes(self.infoFile.add_entry(new))
         self.infoFile = user.InfoFile(self.activeCodeStrVar.get())
-        self.add_button.config(state='enabled')
+        self.add_button.config(state='disabled')
         self.update_button.config(state='disabled')
 
     def password_show(self):
@@ -416,11 +455,19 @@ class GUI:
     def update_button_status(self):
         # Is called whenever a key stroke might change a data entry
         self.update_button.config(state='normal')
-        self.add_button.config(state='normal')
+
+    def add_button_status(self):
+        # Is called whenever a key stroke might change a data entry
+        site = self.siteStrVar.get()
+        results = user.search_results(self.infoFile.infoList, site)
+        if len(results) == 0 or site == '':
+            self.add_button.config(state='normal')
+        else:
+            self.add_button.config(state='disabled')
 
     # Time out functions
     def focus_on_app(self):
-        print('focus_on_app')
+        #print('focus_on_app')
         # Cancel timer when focus returns to app
         try:
             self.delay.cancel()
@@ -429,7 +476,7 @@ class GUI:
             pass
 
     def focus_from_app(self):
-        print('focus_from_app')
+        #print('focus_from_app')
         # Start timer whenever focus moves from app
         self.delay = Timer(interval=self.timeOutIntVar.get(), function=self.timed_quit)
         self.warning_timer = Timer(interval=self.timeOutIntVar.get()-30, function=warning_before_exit)

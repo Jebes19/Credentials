@@ -56,13 +56,17 @@ class InfoFile:
         print(new[0] + ' added')
         return new + ['Credentials added', len(self.infoList) - 1]
 
+# Deprecate after further testing
+# def search_results_old(infolist: list, search: str):
+#     # takes an infoList, searches it and returns a generator object to cycle through matches one at a time.
+#     for i, line in enumerate(infolist):
+#         if search.lower() in line[0].lower():
+#             yield line+['Search again for next match', i]
 
 def search_results(infolist: list, search: str):
-    # takes an infoList, searches it and returns a generator object to cycle through matches one at a time.
-    for i, line in enumerate(infolist):
-        if search.lower() in line[0].lower():
-            yield line+['Search again for next match', i]
-
+    # takes an infoList, searches it and returns a list of matches.
+    matches = [line+['Search again for next match', i] for i, line in enumerate(infolist) if search.lower() in line[0].lower()]
+    return matches
 
 def new_file(code, file):
     with open(file, 'r') as f:

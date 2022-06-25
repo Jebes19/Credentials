@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 def new_key():
     # Writes a new key file to the working directory
-    # This should probably be encorporated with the setup function
+    # This should probably be incorporated with the setup function
     newKey = Fernet.generate_key()
     with open(base_path + newKey.decode() + '.txt', 'wb') as f:
         f.write(Fernet.generate_key()+Fernet.generate_key())
